@@ -2,7 +2,7 @@ use glium::Surface;
 use glium::{implement_vertex, uniform};
 use minecraft_rust::camera::camera::Camera;
 use minecraft_rust::graphics::mesh::{create_cube_vertices, FaceUVs, Vertex};
-use minecraft_rust::graphics::texture::calculate_tile_uvs;
+use minecraft_rust::graphics::texture::{calculate_tile_uvs, init_uvs, UVS};
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
@@ -12,67 +12,27 @@ fn main() {
     let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().unwrap();
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Minecraft").build(&event_loop);
 
-      // load images
-      let image = image::load(std::io::Cursor::new(&include_bytes!("../assets/blocks/blocks.jpg")),
+    // load images
+    let image = image::load(std::io::Cursor::new(&include_bytes!("../assets/blocks/blocks.jpg")),
       image::ImageFormat::Jpeg).unwrap().to_rgba8();
-  let image_dimensions = image.dimensions();
-  let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-  let texture = glium::Texture2d::new(&display, image).unwrap();
+    let image_dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+    let texture = glium::Texture2d::new(&display, image).unwrap();
 
-  let uvs = FaceUVs {
-    front: calculate_tile_uvs(3, 15),
-    back: calculate_tile_uvs(3, 15),
-    top: calculate_tile_uvs(0, 16),
-    bottom: calculate_tile_uvs(2, 16),
-    right: calculate_tile_uvs(3, 15),
-    left: calculate_tile_uvs(3, 15)
-  };
+    
+    init_uvs();
+    
 
+    let uvs = UVS.get().unwrap();
+
+    
+    // create cube
     let vertices = create_cube_vertices(&uvs);
 
     // Improve texture quality, idk if I see a change lol
     let sampler = glium::uniforms::Sampler::new(&texture)
         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);
-    
-
-    // const vertices: [Vertex; 24] = [
-    //     // Front face
-    // Vertex { position: [-0.5, -0.5,  0.5], normal: [0.0, 0.0, 1.0], tex_coords: [0.0, 0.0] },
-    // Vertex { position: [ 0.5, -0.5,  0.5], normal: [0.0, 0.0, 1.0], tex_coords: [1.0, 0.0] },
-    // Vertex { position: [ 0.5,  0.5,  0.5], normal: [0.0, 0.0, 1.0], tex_coords: [1.0, 1.0] },
-    // Vertex { position: [-0.5,  0.5,  0.5], normal: [0.0, 0.0, 1.0], tex_coords: [0.0, 1.0] },
-    
-    // // Back face
-    // Vertex { position: [-0.5, -0.5, -0.5], normal: [0.0, 0.0, -1.0], tex_coords: [1.0, 0.0] },
-    // Vertex { position: [ 0.5, -0.5, -0.5], normal: [0.0, 0.0, -1.0], tex_coords: [0.0, 0.0] },
-    // Vertex { position: [ 0.5,  0.5, -0.5], normal: [0.0, 0.0, -1.0], tex_coords: [0.0, 1.0] },
-    // Vertex { position: [-0.5,  0.5, -0.5], normal: [0.0, 0.0, -1.0], tex_coords: [1.0, 1.0] },
-
-    // // Top face
-    // Vertex { position: [-0.5,  0.5, -0.5], normal: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0] },
-    // Vertex { position: [ 0.5,  0.5, -0.5], normal: [0.0, 1.0, 0.0], tex_coords: [1.0, 0.0] },
-    // Vertex { position: [ 0.5,  0.5,  0.5], normal: [0.0, 1.0, 0.0], tex_coords: [1.0, 1.0] },
-    // Vertex { position: [-0.5,  0.5,  0.5], normal: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0] },
-
-    // // Bottom face
-    // Vertex { position: [-0.5, -0.5, -0.5], normal: [0.0, -1.0, 0.0], tex_coords: [1.0, 0.0] },
-    // Vertex { position: [ 0.5, -0.5, -0.5], normal: [0.0, -1.0, 0.0], tex_coords: [0.0, 0.0] },
-    // Vertex { position: [ 0.5, -0.5,  0.5], normal: [0.0, -1.0, 0.0], tex_coords: [0.0, 1.0] },
-    // Vertex { position: [-0.5, -0.5,  0.5], normal: [0.0, -1.0, 0.0], tex_coords: [1.0, 1.0] },
-
-    // // Right face
-    // Vertex { position: [ 0.5, -0.5, -0.5], normal: [1.0, 0.0, 0.0], tex_coords: [0.0, 0.0] },
-    // Vertex { position: [ 0.5, -0.5,  0.5], normal: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0] },
-    // Vertex { position: [ 0.5,  0.5,  0.5], normal: [1.0, 0.0, 0.0], tex_coords: [1.0, 1.0] },
-    // Vertex { position: [ 0.5,  0.5, -0.5], normal: [1.0, 0.0, 0.0], tex_coords: [0.0, 1.0] },
-
-    // // Left face
-    // Vertex { position: [-0.5, -0.5, -0.5], normal: [-1.0, 0.0, 0.0], tex_coords: [1.0, 0.0] },
-    // Vertex { position: [-0.5, -0.5,  0.5], normal: [-1.0, 0.0, 0.0], tex_coords: [0.0, 0.0] },
-    // Vertex { position: [-0.5,  0.5,  0.5], normal: [-1.0, 0.0, 0.0], tex_coords: [0.0, 1.0] },
-    // Vertex { position: [-0.5,  0.5, -0.5], normal: [-1.0, 0.0, 0.0], tex_coords: [1.0, 1.0] },
-    // ];
     
     const INDICES: [u16; 36] = [
         0,  1,  2,  2,  3,  0, // front
