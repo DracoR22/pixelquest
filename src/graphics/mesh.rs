@@ -8,7 +8,16 @@ pub struct Vertex {
 }
 implement_vertex!(Vertex, position, normal, tex_coords);
 
-pub fn create_cube_vertices(uvs: &[(f32, f32); 4], top_uvs: &[(f32, f32); 4]) -> [Vertex; 24] {
+pub struct FaceUVs {
+    pub front: [(f32, f32); 4],
+    pub back: [(f32, f32); 4],
+    pub top: [(f32, f32); 4],
+    pub bottom: [(f32, f32); 4],
+    pub right: [(f32, f32); 4],
+    pub left: [(f32, f32); 4],
+}
+
+pub fn create_cube_vertices(uvs: &FaceUVs) -> [Vertex; 24] {
     let positions = [
         // Front face
         [[-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]],
@@ -40,11 +49,21 @@ pub fn create_cube_vertices(uvs: &[(f32, f32); 4], top_uvs: &[(f32, f32); 4]) ->
     }; 24];
 
     for i in 0..6 {
+        let uvs = match i {
+            0 => uvs.front,
+            1 => uvs.back,
+            2 => uvs.top,
+            3 => uvs.bottom,
+            4 => uvs.right,
+            5 => uvs.left,
+            _ => unreachable!(),
+        };
+
         for j in 0..4 {
             vertices[i * 4 + j] = Vertex {
                 position: positions[i][j],
                 normal: normals[i],
-                tex_coords: if i == 2 { top_uvs[j].into() } else { uvs[j].into() },
+                tex_coords: uvs[j].into(),
             };
         }
     }

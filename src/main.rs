@@ -1,29 +1,36 @@
 use glium::Surface;
 use glium::{implement_vertex, uniform};
 use minecraft_rust::camera::camera::Camera;
-use minecraft_rust::graphics::mesh::{create_cube_vertices, Vertex};
+use minecraft_rust::graphics::mesh::{create_cube_vertices, FaceUVs, Vertex};
 use minecraft_rust::graphics::texture::calculate_tile_uvs;
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
+
 
 fn main() {
     let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().unwrap();
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Minecraft").build(&event_loop);
 
       // load images
-      let image = image::load(std::io::Cursor::new(&include_bytes!("../assets/blocks/atlas.png")),
-      image::ImageFormat::Png).unwrap().to_rgba8();
+      let image = image::load(std::io::Cursor::new(&include_bytes!("../assets/blocks/blocks.jpg")),
+      image::ImageFormat::Jpeg).unwrap().to_rgba8();
   let image_dimensions = image.dimensions();
   let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
   let texture = glium::Texture2d::new(&display, image).unwrap();
 
-  let tile_uvs_front_back = calculate_tile_uvs(3, 15);
-  let tile_uvs_top = calculate_tile_uvs(8, 13);
+  let uvs = FaceUVs {
+    front: calculate_tile_uvs(3, 15),
+    back: calculate_tile_uvs(3, 15),
+    top: calculate_tile_uvs(0, 16),
+    bottom: calculate_tile_uvs(2, 16),
+    right: calculate_tile_uvs(3, 15),
+    left: calculate_tile_uvs(3, 15)
+  };
 
-    let vertices = create_cube_vertices(&tile_uvs_front_back, &tile_uvs_top);
+    let vertices = create_cube_vertices(&uvs);
 
-    // Set the filtering mode to linear for both minification and magnification
+    // Improve texture quality, idk if I see a change lol
     let sampler = glium::uniforms::Sampler::new(&texture)
         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);

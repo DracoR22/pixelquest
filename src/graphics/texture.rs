@@ -1,6 +1,6 @@
 pub fn calculate_tile_uvs(tile_x: u32, tile_y: u32) -> [(f32, f32); 4] {
-    let tile_size: f32 = 37.51;
-    let atlas_size: f32 = 600.0;
+    let tile_size: f32 = 64.0;
+    let atlas_size: f32 = 1024.0;
     
     // Calculate the UV coordinates for the tile
     let u1: f32 = (tile_x as f32 * tile_size) / atlas_size;
