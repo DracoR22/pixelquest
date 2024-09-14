@@ -1,3 +1,4 @@
+use cgmath::{Point3, Vector3};
 use glium::implement_vertex;
 
 #[derive(Copy, Clone)]
@@ -17,7 +18,7 @@ pub struct FaceUVs {
     pub left: [(f32, f32); 4],
 }
 
-pub fn create_cube_vertices(uvs: &FaceUVs) -> [Vertex; 24] {
+pub fn create_cube_vertices(uvs: &FaceUVs, camera_position: Point3<f32>, offset: Vector3<f32>) -> [Vertex; 24] {
     let positions = [
         // Front face
         [[-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]],
@@ -60,8 +61,17 @@ pub fn create_cube_vertices(uvs: &FaceUVs) -> [Vertex; 24] {
         };
 
         for j in 0..4 {
+            
+             // Adjust the cube's position relative to the camera
+             let pos = positions[i][j];
+             let adjusted_position = [
+                 pos[0] + camera_position[0] + offset.x,
+                 pos[1] + camera_position[1] +  offset.y,
+                 pos[2] + camera_position[2] + offset.z,
+             ];
+
             vertices[i * 4 + j] = Vertex {
-                position: positions[i][j],
+                position: adjusted_position,
                 normal: normals[i],
                 tex_coords: uvs[j].into(),
             };

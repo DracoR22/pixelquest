@@ -1,7 +1,8 @@
+use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
 use glium::{implement_vertex, uniform};
 use minecraft_rust::camera::camera::Camera;
-use minecraft_rust::graphics::mesh::{create_cube_vertices, FaceUVs, Vertex};
+use minecraft_rust::graphics::cube::{create_cube_vertices, FaceUVs, Vertex};
 use minecraft_rust::graphics::texture::{calculate_tile_uvs, init_uvs, UVS};
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
@@ -11,6 +12,14 @@ use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector
 fn main() {
     let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().unwrap();
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Minecraft").build(&event_loop);
+
+    // initialize camera
+    let mut camera = Camera::new(
+        Point3::new(0.0, 0.0, 3.0),
+        Vector3::new(0.0, 1.0, 0.0),
+        -90.0,
+        0.0,
+    );
 
     // load images
     let image = image::load(std::io::Cursor::new(&include_bytes!("../assets/blocks/blocks.jpg")),
@@ -24,10 +33,10 @@ fn main() {
     
 
     let uvs = UVS.get().unwrap();
-
+    let offset = Vector3::new(0.0, -3.0, 0.0);
     
     // create cube
-    let vertices = create_cube_vertices(&uvs);
+    let vertices = create_cube_vertices(&uvs, camera.position, offset);
 
     // Improve texture quality, idk if I see a change lol
     let sampler = glium::uniforms::Sampler::new(&texture)
@@ -48,13 +57,6 @@ fn main() {
     let index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &INDICES).unwrap();
 
     let program = glium::Program::from_source(&display, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC, None).unwrap();
-
-    let mut camera = Camera::new(
-        Point3::new(0.0, 0.0, 3.0),
-        Vector3::new(0.0, 1.0, 0.0),
-        -90.0,
-        0.0,
-    );
 
     let device_state = DeviceState::new();
     let mut last_frame = std::time::Instant::now();
@@ -110,6 +112,11 @@ fn main() {
 
                     target.finish().unwrap();
                 },
+                glium::winit::event::WindowEvent::MouseInput { state, button, .. } => {
+                    if button == MouseButton::Left && state == ElementState::Pressed {
+                        println!("Left mouse clicked");
+                    }
+                },
                 _ => (),
             },
             glium::winit::event::Event::DeviceEvent { event, .. } => match event {
@@ -127,9 +134,11 @@ fn main() {
                     last_x = x as f32;
                     last_y = y as f32;
 
+                    // println!("Mouse coords: ({}, {})", x, -y);
+
                     camera.process_mouse_movement(x as f32, -y as f32);
                 },
-                _ => (),
+                _ => (),            
             },
             glium::winit::event::Event::AboutToWait => {
                 // Handle keyboard input
@@ -148,6 +157,9 @@ fn main() {
                 if keys.contains(&Keycode::D) {
                     camera.position += camera.right * camera_speed;
                 }
+                
+
+                // println!("Camera position: {:?}", camera.position);
 
                 window.request_redraw();
             },

@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use super::mesh::FaceUVs;
+use super::cube::FaceUVs;
 
 pub fn calculate_tile_uvs(tile_x: u32, tile_y: u32) -> [(f32, f32); 4] {
     let tile_size: f32 = 64.0;
