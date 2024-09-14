@@ -7,7 +7,7 @@ use minecraft_rust::graphics::texture::{calculate_tile_uvs, init_uvs, UVS};
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
-use minecraft_rust::world::generate::generate_world;
+use minecraft_rust::world::chunk::generate_chunk;
 
 
 fn main() {
@@ -36,7 +36,6 @@ fn main() {
 
     let uvs = UVS.get().unwrap();
     let offset = Vector3::new(0.0, -3.0, 0.0);
-    let offset2 = Vector3::new(1.0, -3.0, 0.0);
     
     // create cube
     // let vertices = create_cube_vertices(&uvs, camera.position, offset);
@@ -46,7 +45,7 @@ fn main() {
     //     let mut combined_vertices = Vec::from(vertices);
     //     combined_vertices.extend_from_slice(&vertices2);
 
-    let (vertices, inidices) = generate_world(5, uvs, camera.position);
+    let (vertices, inidices) = generate_chunk(uvs, camera.position);
     
 
     // Improve texture quality, idk if I see a change lol
@@ -54,7 +53,7 @@ fn main() {
         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);
 
-    // Create buffers
+    // Create chunk buffers
     let vertex_buffer = glium::vertex::VertexBuffer::new(&display, &vertices).unwrap();
     let index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &inidices).unwrap();
 
