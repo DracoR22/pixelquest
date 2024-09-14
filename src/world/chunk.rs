@@ -4,7 +4,13 @@ use cgmath::{Point3, Vector3};
 
 use crate::graphics::cube::{create_cube_vertices, FaceUVs, Vertex};
 
-pub fn generate_chunk(uvs:&FaceUVs, camera_position: Point3<f32>) -> (Vec<Vertex>, Vec<u32>) {
+pub struct ChunkData {
+    pub vertices: Vec<Vertex>,
+    pub indices: Vec<u32>,
+}
+
+
+pub fn generate_chunk(uvs:&FaceUVs, camera_position: Point3<f32>) -> ChunkData {
     let chunk_size = 16;
     let mut vertices = Vec::new();
     let mut indices = Vec::new();
@@ -21,7 +27,7 @@ pub fn generate_chunk(uvs:&FaceUVs, camera_position: Point3<f32>) -> (Vec<Vertex
             let base_index = vertices.len() as u32;
             vertices.extend_from_slice(&cube_vertices);
 
-            // Generate indices for this cube
+            // Generate indices for all cubes
             let cube_indices: Vec<u32> = CUBE_INDICES.iter()
                 .map(|&idx| idx as u32 + base_index)
                 .collect();
@@ -29,10 +35,13 @@ pub fn generate_chunk(uvs:&FaceUVs, camera_position: Point3<f32>) -> (Vec<Vertex
         }
     }
 
-    (vertices, indices)
+    ChunkData {
+        indices,
+        vertices
+    }
 }
 
-const CUBE_INDICES: [u16; 36] = [
+pub const CUBE_INDICES: [u16; 36] = [
     0,  1,  2,  2,  3,  0, // front
     4,  5,  6,  6,  7,  4, // back
     8,  9, 10, 10, 11,  8, // top

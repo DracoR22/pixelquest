@@ -7,7 +7,7 @@ use minecraft_rust::graphics::texture::{calculate_tile_uvs, init_uvs, UVS};
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
-use minecraft_rust::world::chunk::generate_chunk;
+use minecraft_rust::world::chunk::{generate_chunk, CUBE_INDICES};
 
 
 fn main() {
@@ -45,7 +45,7 @@ fn main() {
     //     let mut combined_vertices = Vec::from(vertices);
     //     combined_vertices.extend_from_slice(&vertices2);
 
-    let (vertices, inidices) = generate_chunk(uvs, camera.position);
+    let mut chunk_data = generate_chunk(uvs, camera.position);
     
 
     // Improve texture quality, idk if I see a change lol
@@ -54,8 +54,8 @@ fn main() {
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);
 
     // Create chunk buffers
-    let vertex_buffer = glium::vertex::VertexBuffer::new(&display, &vertices).unwrap();
-    let index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &inidices).unwrap();
+    let mut vertex_buffer = glium::vertex::VertexBuffer::new(&display, &chunk_data.vertices).unwrap();
+    let mut index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &chunk_data.indices).unwrap();
 
     let program = glium::Program::from_source(&display, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC, None).unwrap();
 
@@ -84,7 +84,7 @@ fn main() {
                 },
                 glium::winit::event::WindowEvent::RedrawRequested => {
                     let mut target = display.draw();
-                    target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
+                    target.clear_color_and_depth((0.53, 0.81, 0.92, 1.0), 1.0);
 
                     let model: Matrix4<f32> = Matrix4::identity();
                     let view = camera.get_view_matrix();
@@ -118,39 +118,25 @@ fn main() {
                         
                         println!("Left mouse clicked, {:?}", current_mouse_position);
 
-    //                     // create cube
-    //                    let new_vertices = create_cube_vertices(&uvs, Point3::new(1.0, -1.0, 3.0), offset);
-    //                      // Create buffers
-    // let n_vertex_buffer = glium::vertex::VertexBuffer::new(&display, &new_vertices).unwrap();
-    // let n_index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &INDICES).unwrap();
-    //                     let mut target = display.draw();
+                          // Hardcoded offset for the new cube
+                        let offset = Vector3::new(0.0, 0.0, 0.0);
 
-                        
-    //                 let model: Matrix4<f32> = Matrix4::identity();
-    //                 let view = camera.get_view_matrix();
-    //                 let (width, height) = target.get_dimensions();
-    //                 let aspect_ratio = width as f32 / height as f32;
-    //                 let perspective: Matrix4<f32> = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
+                        // Generate vertices for the new cube
+                        let new_cube_vertices = create_cube_vertices(&uvs, camera.position, offset);
 
-    //                 let light = [-1.0, 0.4, 0.9f32];
+                        // Add new vertices to the chunk data
+                        let base_index = chunk_data.vertices.len() as u32;
+                        chunk_data.vertices.extend_from_slice(&new_cube_vertices);
 
-    //                 let params = glium::DrawParameters {
-    //                     depth: glium::Depth {
-    //                         test: glium::DepthTest::IfLess,
-    //                         write: true,
-    //                         .. Default::default()
-    //                     },
-    //                     .. Default::default()
-    //                 };
+                        // Generate and add indices for the new cube
+                        let new_cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                            .map(|&idx| idx as u32 + base_index)
+                            .collect();
+                        chunk_data.indices.extend_from_slice(&new_cube_indices);
 
-    //                     target.draw(&n_vertex_buffer, &n_index_buffer, &program,
-    //                         &uniform! { model: Into::<[[f32; 4]; 4]>::into(model),
-    //                                     view: Into::<[[f32; 4]; 4]>::into(view),
-    //                                     perspective: Into::<[[f32; 4]; 4]>::into(perspective),
-    //                                     u_light: light, tex: sampler },
-    //                         &params).unwrap();
-
-    //                         target.finish().unwrap();
+                        // Update vertex and index buffers
+                        vertex_buffer = glium::vertex::VertexBuffer::new(&display, &chunk_data.vertices).unwrap();
+                        index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &chunk_data.indices).unwrap();
                     }
                 },
                 _ => (),
@@ -191,6 +177,9 @@ fn main() {
                 }
                 if keys.contains(&Keycode::D) {
                     camera.position += camera.right * camera_speed;
+                }
+                if keys.contains(&Keycode::W) && keys.contains(&Keycode::LShift) {
+                    camera.position += camera.front * camera_speed * 2.0
                 }
                 
 
