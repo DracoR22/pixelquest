@@ -7,12 +7,14 @@ use minecraft_rust::graphics::texture::{calculate_tile_uvs, init_uvs, UVS};
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
+use minecraft_rust::state::global::{initialize_state, CAMERA_VIEW};
 
 
 fn main() {
     let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().unwrap();
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Minecraft").build(&event_loop);
-
+    
+    let mut current_mouse_position = (0.0, 0.0, 0.0);
     // initialize camera
     let mut camera = Camera::new(
         Point3::new(0.0, 0.0, 3.0),
@@ -34,26 +36,41 @@ fn main() {
 
     let uvs = UVS.get().unwrap();
     let offset = Vector3::new(0.0, -3.0, 0.0);
+    let offset2 = Vector3::new(1.0, -3.0, 0.0);
     
     // create cube
     let vertices = create_cube_vertices(&uvs, camera.position, offset);
+    let vertices2 = create_cube_vertices(&uvs, camera.position, offset2);
+
+        // Combine vertices into a single vector
+        let mut combined_vertices = Vec::from(vertices);
+        combined_vertices.extend_from_slice(&vertices2);
+    
 
     // Improve texture quality, idk if I see a change lol
     let sampler = glium::uniforms::Sampler::new(&texture)
         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);
     
-    const INDICES: [u16; 36] = [
-        0,  1,  2,  2,  3,  0, // front
-        4,  5,  6,  6,  7,  4, // back
-        8,  9, 10, 10, 11,  8, // top
-        12, 13, 14, 14, 15, 12, // bottom
-        16, 17, 18, 18, 19, 16, // right
-        20, 21, 22, 22, 23, 20  // left
-    ];
+        const INDICES: [u16; 72] = [
+            // First cube
+            0,  1,  2,  2,  3,  0,
+            4,  5,  6,  6,  7,  4,
+            8,  9, 10, 10, 11,  8,
+            12, 13, 14, 14, 15, 12,
+            16, 17, 18, 18, 19, 16,
+            20, 21, 22, 22, 23, 20,
+            // Second cube (add 24 to each index)
+            24, 25, 26, 26, 27, 24,
+            28, 29, 30, 30, 31, 28,
+            32, 33, 34, 34, 35, 32,
+            36, 37, 38, 38, 39, 36,
+            40, 41, 42, 42, 43, 40,
+            44, 45, 46, 46, 47, 44
+        ];
 
     // Create buffers
-    let vertex_buffer = glium::vertex::VertexBuffer::new(&display, &vertices).unwrap();
+    let vertex_buffer = glium::vertex::VertexBuffer::new(&display, &combined_vertices).unwrap();
     let index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &INDICES).unwrap();
 
     let program = glium::Program::from_source(&display, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC, None).unwrap();
@@ -114,7 +131,42 @@ fn main() {
                 },
                 glium::winit::event::WindowEvent::MouseInput { state, button, .. } => {
                     if button == MouseButton::Left && state == ElementState::Pressed {
-                        println!("Left mouse clicked");
+                        
+                        println!("Left mouse clicked, {:?}", current_mouse_position);
+
+    //                     // create cube
+    //                    let new_vertices = create_cube_vertices(&uvs, Point3::new(1.0, -1.0, 3.0), offset);
+    //                      // Create buffers
+    // let n_vertex_buffer = glium::vertex::VertexBuffer::new(&display, &new_vertices).unwrap();
+    // let n_index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &INDICES).unwrap();
+    //                     let mut target = display.draw();
+
+                        
+    //                 let model: Matrix4<f32> = Matrix4::identity();
+    //                 let view = camera.get_view_matrix();
+    //                 let (width, height) = target.get_dimensions();
+    //                 let aspect_ratio = width as f32 / height as f32;
+    //                 let perspective: Matrix4<f32> = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
+
+    //                 let light = [-1.0, 0.4, 0.9f32];
+
+    //                 let params = glium::DrawParameters {
+    //                     depth: glium::Depth {
+    //                         test: glium::DepthTest::IfLess,
+    //                         write: true,
+    //                         .. Default::default()
+    //                     },
+    //                     .. Default::default()
+    //                 };
+
+    //                     target.draw(&n_vertex_buffer, &n_index_buffer, &program,
+    //                         &uniform! { model: Into::<[[f32; 4]; 4]>::into(model),
+    //                                     view: Into::<[[f32; 4]; 4]>::into(view),
+    //                                     perspective: Into::<[[f32; 4]; 4]>::into(perspective),
+    //                                     u_light: light, tex: sampler },
+    //                         &params).unwrap();
+
+    //                         target.finish().unwrap();
                     }
                 },
                 _ => (),
@@ -128,11 +180,10 @@ fn main() {
                         first_mouse = false;
                     }
 
-                    let xoffset = x as f32 - last_x;
-                    let yoffset = last_y - y as f32; // Reversed since y-coordinates go from bottom to top
+                    current_mouse_position = (last_x + x as f32, last_y + y as f32, 0.0);
 
-                    last_x = x as f32;
-                    last_y = y as f32;
+                    last_x += x as f32;
+                    last_y += y as f32;
 
                     // println!("Mouse coords: ({}, {})", x, -y);
 
