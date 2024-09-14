@@ -7,7 +7,7 @@ use minecraft_rust::graphics::texture::{calculate_tile_uvs, init_uvs, UVS};
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
-use minecraft_rust::state::global::{initialize_state, CAMERA_VIEW};
+use minecraft_rust::world::generate::generate_world;
 
 
 fn main() {
@@ -39,39 +39,24 @@ fn main() {
     let offset2 = Vector3::new(1.0, -3.0, 0.0);
     
     // create cube
-    let vertices = create_cube_vertices(&uvs, camera.position, offset);
-    let vertices2 = create_cube_vertices(&uvs, camera.position, offset2);
+    // let vertices = create_cube_vertices(&uvs, camera.position, offset);
+    // let vertices2 = create_cube_vertices(&uvs, camera.position, offset2);
 
-        // Combine vertices into a single vector
-        let mut combined_vertices = Vec::from(vertices);
-        combined_vertices.extend_from_slice(&vertices2);
+    //     // Combine vertices into a single vector
+    //     let mut combined_vertices = Vec::from(vertices);
+    //     combined_vertices.extend_from_slice(&vertices2);
+
+    let (vertices, inidices) = generate_world(5, uvs, camera.position);
     
 
     // Improve texture quality, idk if I see a change lol
     let sampler = glium::uniforms::Sampler::new(&texture)
         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);
-    
-        const INDICES: [u16; 72] = [
-            // First cube
-            0,  1,  2,  2,  3,  0,
-            4,  5,  6,  6,  7,  4,
-            8,  9, 10, 10, 11,  8,
-            12, 13, 14, 14, 15, 12,
-            16, 17, 18, 18, 19, 16,
-            20, 21, 22, 22, 23, 20,
-            // Second cube (add 24 to each index)
-            24, 25, 26, 26, 27, 24,
-            28, 29, 30, 30, 31, 28,
-            32, 33, 34, 34, 35, 32,
-            36, 37, 38, 38, 39, 36,
-            40, 41, 42, 42, 43, 40,
-            44, 45, 46, 46, 47, 44
-        ];
 
     // Create buffers
-    let vertex_buffer = glium::vertex::VertexBuffer::new(&display, &combined_vertices).unwrap();
-    let index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &INDICES).unwrap();
+    let vertex_buffer = glium::vertex::VertexBuffer::new(&display, &vertices).unwrap();
+    let index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &inidices).unwrap();
 
     let program = glium::Program::from_source(&display, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC, None).unwrap();
 
