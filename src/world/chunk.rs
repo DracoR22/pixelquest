@@ -18,11 +18,11 @@ pub fn generate_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_height: i
     let mut vertices = Vec::new();
     let mut indices = Vec::new();
 
-    let seed: u32 = 42;
+    let seed: u32 = 142;
     let perlin = Perlin::new(seed);
 
-    let scale = 0.02; // Adjust the scale for frequency of mountains
-    let height_scale = 16.0; // Taller mountains
+    let scale = 0.05; // Adjust the scale for frequency of mountains
+    let height_scale = 1.0; // Taller mountains
 
     // Generate an extended height map for mountainous terrain
     let extended_size = CHUNK_SIZE + 2 * OVERLAP;
@@ -33,13 +33,12 @@ pub fn generate_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_height: i
         for z in 0..extended_size {
             let world_x = (chunk_position.x * CHUNK_SIZE + x - OVERLAP) as f64;
             let world_z = (chunk_position.z * CHUNK_SIZE + z - OVERLAP) as f64;
-
+    
             let noise_value = perlin.get([world_x * scale, world_z * scale]);
-            let height = (noise_value * height_scale).round() as i32 + flat_height; // Added flat terrain height
+            let height = (noise_value * height_scale).round() as i32 + flat_height;
             height_map[x as usize][z as usize] = height;
         }
     }
-
     // Generate the flat base layer
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
@@ -59,7 +58,7 @@ pub fn generate_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_height: i
     }
 
     // Generate the mountainous terrain
-    generate_mountainous_terrain(uvs, chunk_position, &height_map, flat_height, &mut vertices, &mut indices);
+    generate_mountainous_terrain(uvs, chunk_position, &height_map, flat_height, &mut vertices, &mut indices, 2);
 
 
     ChunkData {
@@ -75,23 +74,30 @@ pub fn generate_mountainous_terrain(
     flat_height: i32,
     vertices: &mut Vec<Vertex>,
     indices: &mut Vec<u32>,
+    mountain_width: i32, // New parameter to control mountain width
 ) {
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
-            let height = height_map[(x + OVERLAP) as usize][(z + OVERLAP) as usize];
+            let base_height = height_map[(x + OVERLAP) as usize][(z + OVERLAP) as usize];
 
-            for y in (flat_height + 1)..=height { // Generate only above the flat terrain
-                if is_block_exposed(x, y, z, height_map) {
-                    let offset = Vector3::new(x as f32, y as f32, z as f32);
-                    let cube_vertices = create_cube_vertices(uvs, Point3::new(0.0, 0.0, 0.0), offset);
+            for dy in 0..mountain_width {
+                let height = base_height + dy;
 
-                    let base_index = vertices.len() as u32;
-                    vertices.extend_from_slice(&cube_vertices);
+                if height > flat_height {
+                    for y in (flat_height + 1)..=height {
+                        if is_block_exposed(x, y, z, height_map) {
+                            let offset = Vector3::new(x as f32, y as f32, z as f32);
+                            let cube_vertices = create_cube_vertices(uvs, Point3::new(0.0, 0.0, 0.0), offset);
 
-                    let cube_indices: Vec<u32> = CUBE_INDICES.iter()
-                        .map(|&idx| idx as u32 + base_index)
-                        .collect();
-                    indices.extend_from_slice(&cube_indices);
+                            let base_index = vertices.len() as u32;
+                            vertices.extend_from_slice(&cube_vertices);
+
+                            let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                                .map(|&idx| idx as u32 + base_index)
+                                .collect();
+                            indices.extend_from_slice(&cube_indices);
+                        }
+                    }
                 }
             }
         }
@@ -110,9 +116,9 @@ fn is_block_exposed(x: i32, y: i32, z: i32, height_map: &Vec<Vec<i32>>) -> bool 
     for (nx, nz) in check_positions.iter() {
         let hm_x = (nx + OVERLAP).clamp(0, map_size - 1) as usize;
         let hm_z = (nz + OVERLAP).clamp(0, map_size - 1) as usize;
-        
+
         // Check if the block is exposed from the top or sides
-        if y > height_map[hm_x][hm_z] || (nx == &x && nz == &z && y == height_map[hm_x][hm_z]) {
+        if y > height_map[hm_x][hm_z] {
             return true;
         }
     }

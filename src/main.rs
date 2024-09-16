@@ -16,7 +16,7 @@ fn main() {
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Minecraft").build(&event_loop);
     
     let mut current_mouse_position = (0.0, 0.0, 0.0);
-    
+
     // initialize camera
     let mut camera = Camera::new(
         Point3::new(0.0, 0.0, 3.0),
@@ -69,7 +69,7 @@ fn main() {
     window.set_cursor_grab(glium::winit::window::CursorGrabMode::Confined).unwrap();
     window.set_cursor_visible(false);
 
-    let world = World::new(&display, &uvs);
+    let mut world = World::new(&display, &uvs);
 
     let _ = event_loop.run(move |event, window_target| {
         let current_frame = std::time::Instant::now();
@@ -83,24 +83,24 @@ fn main() {
                     display.resize(window_size.into());
                 },
                 glium::winit::event::WindowEvent::RedrawRequested => {
+                    // Start drawing the frame
                     let mut target = display.draw();
                     target.clear_color_and_depth((0.53, 0.81, 0.92, 1.0), 1.0);
-
+                
+                    // Get window dimensions and aspect ratio
                     let (width, height) = target.get_dimensions();
                     let aspect_ratio = width as f32 / height as f32;
+                
+                    // Create a perspective projection matrix
                     let perspective: Matrix4<f32> = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
-
-                   
-                    
+                
+                    // Update world based on the camera's current position (for infinite terrain generation)
+                    world.update(camera.position, &display, &uvs); // <- Add this to update the world
+                
+                    // Render the world with the updated camera and perspective
                     world.render(&mut target, &program, &camera, perspective, sampler);
-
-                    // target.draw(&vertex_buffer, &index_buffer, &program,
-                    //     &uniform! { model: Into::<[[f32; 4]; 4]>::into(model),
-                    //                 view: Into::<[[f32; 4]; 4]>::into(view),
-                    //                 perspective: Into::<[[f32; 4]; 4]>::into(perspective),
-                    //                 u_light: light, tex: sampler },
-                    //     &params).unwrap();
-
+                
+                    // Finalize drawing and display the frame
                     target.finish().unwrap();
                 },
                 glium::winit::event::WindowEvent::MouseInput { state, button, .. } => {

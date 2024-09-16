@@ -80,3 +80,7 @@ pub fn create_cube_vertices(uvs: &FaceUVs, camera_position: Point3<f32>, offset:
 
     vertices
 }
+
+pub fn create_single_tx_cube_vertices(camera_position: Point3<f32>, offset: Vector3<f32>) {
+  
+}
