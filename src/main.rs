@@ -3,7 +3,7 @@ use glium::Surface;
 use glium::{implement_vertex, uniform};
 use minecraft_rust::camera::camera::Camera;
 use minecraft_rust::graphics::cube::{create_cube_vertices, FaceUVs, Vertex};
-use minecraft_rust::graphics::texture::{calculate_tile_uvs, init_uvs, UVS};
+use minecraft_rust::graphics::texture::{calculate_tile_uvs, create_block_texture, init_uvs, UVS};
 use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
@@ -24,11 +24,13 @@ fn main() {
     );
 
     // load images
-    let image = image::load(std::io::Cursor::new(&include_bytes!("../assets/blocks/blocks.jpg")),
-      image::ImageFormat::Jpeg).unwrap().to_rgba8();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    let texture = glium::Texture2d::new(&display, image).unwrap();
+    // let image = image::load(std::io::Cursor::new(&include_bytes!("../assets/blocks/blocks.jpg")),
+    //   image::ImageFormat::Jpeg).unwrap().to_rgba8();
+    // let image_dimensions = image.dimensions();
+    // let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+    // let texture = glium::Texture2d::new(&display, image).unwrap();
+
+    let texture = create_block_texture(&display);
 
     
     init_uvs();
@@ -119,7 +121,7 @@ fn main() {
                         println!("Left mouse clicked, {:?}", current_mouse_position);
 
                           // Hardcoded offset for the new cube
-                        let offset = Vector3::new(0.0, 0.0, 0.0);
+                        let offset = Vector3::new(1.0, 0.0, 0.0);
 
                         // Generate vertices for the new cube
                         let new_cube_vertices = create_cube_vertices(&uvs, camera.position, offset);

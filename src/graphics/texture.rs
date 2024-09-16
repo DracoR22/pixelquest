@@ -1,5 +1,7 @@
 use std::sync::OnceLock;
 
+use glium::{glutin::surface::WindowSurface, Display};
+
 use super::cube::FaceUVs;
 
 pub fn calculate_tile_uvs(tile_x: u32, tile_y: u32) -> [(f32, f32); 4] {
@@ -32,4 +34,14 @@ pub fn init_uvs() {
         right: calculate_tile_uvs(3, 15),
         left: calculate_tile_uvs(3, 15),
     });
+}
+
+pub fn create_block_texture(display: &Display<WindowSurface>, ) -> glium::Texture2d {
+let image = image::load(std::io::Cursor::new(&include_bytes!("../..//assets/blocks/blocks.jpg")),
+    image::ImageFormat::Jpeg).unwrap().to_rgba8();
+  let image_dimensions = image.dimensions();
+  let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+  let texture = glium::Texture2d::new(display, image).unwrap();
+   
+  texture
 }
