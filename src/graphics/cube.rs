@@ -9,6 +9,7 @@ pub struct Vertex {
 }
 implement_vertex!(Vertex, position, normal, tex_coords);
 
+#[derive(Clone)]
 pub struct FaceUVs {
     pub front: [(f32, f32); 4],
     pub back: [(f32, f32); 4],
@@ -79,8 +80,4 @@ pub fn create_cube_vertices(uvs: &FaceUVs, camera_position: Point3<f32>, offset:
     }
 
     vertices
-}
-
-pub fn create_single_tx_cube_vertices(camera_position: Point3<f32>, offset: Vector3<f32>) {
-  
 }

@@ -21,24 +21,12 @@ pub fn generate_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_height: i
     let seed: u32 = 142;
     let perlin = Perlin::new(seed);
 
-    let scale = 0.05; // Adjust the scale for frequency of mountains
+    let scale = 0.1; // Adjust the scale for frequency of mountains
     let height_scale = 1.0; // Taller mountains
 
     // Generate an extended height map for mountainous terrain
     let extended_size = CHUNK_SIZE + 2 * OVERLAP;
-    let mut height_map = vec![vec![0; extended_size as usize]; extended_size as usize];
-
-    // Generate Perlin noise for the height map
-    for x in 0..extended_size {
-        for z in 0..extended_size {
-            let world_x = (chunk_position.x * CHUNK_SIZE + x - OVERLAP) as f64;
-            let world_z = (chunk_position.z * CHUNK_SIZE + z - OVERLAP) as f64;
     
-            let noise_value = perlin.get([world_x * scale, world_z * scale]);
-            let height = (noise_value * height_scale).round() as i32 + flat_height;
-            height_map[x as usize][z as usize] = height;
-        }
-    }
     // Generate the flat base layer
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
@@ -58,7 +46,8 @@ pub fn generate_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_height: i
     }
 
     // Generate the mountainous terrain
-    generate_mountainous_terrain(uvs, chunk_position, &height_map, flat_height, &mut vertices, &mut indices, 2);
+    generate_mountainous_terrain(uvs, chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, scale, height_scale, extended_size);
+    generate_mountainous_terrain(uvs, chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.05, 16.0, extended_size);
 
 
     ChunkData {
@@ -70,12 +59,28 @@ pub fn generate_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_height: i
 pub fn generate_mountainous_terrain(
     uvs: &FaceUVs,
     chunk_position: Point3<i32>,
-    height_map: &Vec<Vec<i32>>,
     flat_height: i32,
     vertices: &mut Vec<Vertex>,
     indices: &mut Vec<u32>,
-    mountain_width: i32, // New parameter to control mountain width
+    mountain_width: i32, 
+    perlin: Perlin,
+    scale: f64,
+    height_scale: f64,
+    extended_size: i32
 ) {
+    let mut height_map = vec![vec![0; extended_size as usize]; extended_size as usize];
+    // Generate Perlin noise for the height map
+    for x in 0..extended_size {
+        for z in 0..extended_size {
+            let world_x = (chunk_position.x * CHUNK_SIZE + x - OVERLAP) as f64;
+            let world_z = (chunk_position.z * CHUNK_SIZE + z - OVERLAP) as f64;
+
+            let noise_value = perlin.get([world_x * scale, world_z * scale]);
+            let height = (noise_value * height_scale).round() as i32 + flat_height; // Added flat terrain height
+            height_map[x as usize][z as usize] = height;
+        }
+    }
+
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
             let base_height = height_map[(x + OVERLAP) as usize][(z + OVERLAP) as usize];
@@ -85,7 +90,7 @@ pub fn generate_mountainous_terrain(
 
                 if height > flat_height {
                     for y in (flat_height + 1)..=height {
-                        if is_block_exposed(x, y, z, height_map) {
+                        if is_block_exposed(x, y, z, &height_map) {
                             let offset = Vector3::new(x as f32, y as f32, z as f32);
                             let cube_vertices = create_cube_vertices(uvs, Point3::new(0.0, 0.0, 0.0), offset);
 

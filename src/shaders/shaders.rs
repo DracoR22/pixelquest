@@ -1,53 +1,69 @@
 pub static VERTEX_SHADER_SRC: &str = r#"
- #version 140
+#version 140
 
-    in vec3 position;
-    in vec3 normal;
-    in vec2 tex_coords;
+in vec3 position;
+in vec3 normal;
+in vec2 tex_coords;
 
-    out vec3 v_normal;
-    out vec3 v_position;
-    out vec2 v_tex_coords;
+out vec3 v_normal;
+out vec3 v_position;
+out vec2 v_tex_coords;
+out float v_fog_factor;
 
-    uniform mat4 perspective;
-    uniform mat4 view;
-    uniform mat4 model;
+uniform mat4 perspective;
+uniform mat4 view;
+uniform mat4 model;
+uniform float fog_start;
+uniform float fog_end;
 
-    void main() {
-        v_tex_coords = tex_coords;
-        mat4 modelview = view * model;
-        v_normal = transpose(inverse(mat3(modelview))) * normal;
-        gl_Position = perspective * modelview * vec4(position, 1.0);
-        v_position = gl_Position.xyz / gl_Position.w;
-    }
+void main() {
+    v_tex_coords = tex_coords;
+    mat4 modelview = view * model;
+    v_normal = transpose(inverse(mat3(modelview))) * normal;
+    
+    // Snap vertices to grid
+    vec3 snapped_position = round(position);
+    vec4 world_pos = model * vec4(snapped_position, 1.0);
+    gl_Position = perspective * view * world_pos;
+    v_position = (view * world_pos).xyz;
+    
+    // Calculate fog factor
+    float dist = length(v_position);
+    v_fog_factor = clamp((fog_end - dist) / (fog_end - fog_start), 0.0, 1.0);
+}
 "#;
 
 pub static FRAGMENT_SHADER_SRC: &str = r#"
-  #version 140
+ #version 140
 
-    in vec3 v_normal;
-    in vec3 v_position;
-    in vec2 v_tex_coords;
+in vec3 v_normal;
+in vec3 v_position;
+in vec2 v_tex_coords;
+in float v_fog_factor;
 
-    out vec4 color;
+out vec4 color;
 
-    uniform vec3 u_light;
-    uniform sampler2D tex;
+uniform vec3 u_light;
+uniform sampler2D tex;
+uniform vec3 fog_color;
 
-    const vec3 specular_color = vec3(1.0, 1.0, 1.0);
+const vec3 ambient_color = vec3(0.7, 0.7, 0.7);
+const float diffuse_strength = 0.3;
+const float ambient_strength = 0.7;
 
-    void main() {
-        vec3 diffuse_color = texture(tex, v_tex_coords).rgb;
-        
-        vec3 normalized_normal = normalize(v_normal);
-        vec3 ambient_color = diffuse_color * 0.1;
-        float diffuse = max(dot(normalized_normal, normalize(u_light)), 0.0);
-        vec3 camera_dir = normalize(-v_position);
-        vec3 half_direction = normalize(normalize(u_light) + camera_dir);
-        float specular = pow(max(dot(half_direction, normalized_normal), 0.0), 16.0);
-
-        color = vec4(ambient_color + diffuse * diffuse_color + specular * specular_color, 1.0);
-    }
+void main() {
+    vec3 diffuse_color = texture(tex, v_tex_coords).rgb;
+    
+    vec3 normalized_normal = normalize(v_normal);
+    float diffuse = max(dot(normalized_normal, normalize(u_light)), 0.0);
+    
+    // Combine ambient and diffuse lighting
+    vec3 lighting = ambient_strength * ambient_color + diffuse_strength * diffuse * vec3(1.0);
+    vec3 final_color = diffuse_color * lighting;
+    
+    // Apply fog
+    color = vec4(mix(fog_color, final_color, v_fog_factor), 1.0);
+}
 "#;
 
 // #version 140

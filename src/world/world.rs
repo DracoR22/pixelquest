@@ -148,6 +148,9 @@ impl World {
                         perspective: Into::<[[f32; 4]; 4]>::into(perspective),
                         u_light: light,
                         tex: sampler,
+                        fog_color: [0.7, 0.85, 1.0f32],  // Slightly bluer, closer to sky color
+                        fog_start: 50.0f32,  // Increased from 5.0
+                        fog_end: 150.0f32,   // Increased from 60.0
                     },
                     &params,
                 )

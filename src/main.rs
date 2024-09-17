@@ -1,19 +1,19 @@
 use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
 use glium::{implement_vertex, uniform};
-use minecraft_rust::camera::camera::Camera;
-use minecraft_rust::graphics::cube::{create_cube_vertices, FaceUVs, Vertex};
-use minecraft_rust::graphics::texture::{calculate_tile_uvs, create_block_texture, init_uvs, UVS};
-use minecraft_rust::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
+use pixelquest::camera::camera::Camera;
+use pixelquest::graphics::cube::{create_cube_vertices, FaceUVs, Vertex};
+use pixelquest::graphics::texture::{calculate_tile_uvs, create_block_texture, init_uvs, UVS};
+use pixelquest::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
-use minecraft_rust::world::chunk::{generate_chunk, CUBE_INDICES};
+use pixelquest::world::chunk::{generate_chunk, CUBE_INDICES};
 
-use minecraft_rust::world::world::World;
+use pixelquest::world::world::World;
 
 fn main() {
     let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().unwrap();
-    let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Minecraft").build(&event_loop);
+    let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Pixel Quest").build(&event_loop);
     
     let mut current_mouse_position = (0.0, 0.0, 0.0);
 
@@ -30,9 +30,10 @@ fn main() {
 
     
     init_uvs();
-    
 
-    let uvs = UVS.get().unwrap();
+    // let uvs = UVS.get().unwrap();
+    let uvs =  UVS.get().and_then(|map| map.get("dark_grass")).cloned().expect("No uvs found");
+
     let offset = Vector3::new(0.0, -3.0, 0.0);
     
     // create cube
@@ -85,8 +86,10 @@ fn main() {
                 glium::winit::event::WindowEvent::RedrawRequested => {
                     // Start drawing the frame
                     let mut target = display.draw();
-                    target.clear_color_and_depth((0.53, 0.81, 0.92, 1.0), 1.0);
-                
+                    target.clear_color_and_depth((0.2510, 0.4745, 0.9608, 1.0), 1.0);
+
+                    // target.clear_color_and_depth((0.0, 0.3176, 1.0, 1.0), 1.0);
+
                     // Get window dimensions and aspect ratio
                     let (width, height) = target.get_dimensions();
                     let aspect_ratio = width as f32 / height as f32;

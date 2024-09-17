@@ -842,18 +842,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "minecraft_rust"
-version = "0.1.0"
-dependencies = [
- "cgmath",
- "device_query",
- "glium",
- "image",
- "noise",
- "rand",
-]
-
-[[package]]
 name = "miniz_oxide"
 version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1210,6 +1198,18 @@ name = "pin-project-lite"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bda66fc9667c18cb2758a2ac84d1167245054bcf85d5d1aaa6923f45801bdd02"
+
+[[package]]
+name = "pixelquest"
+version = "0.1.0"
+dependencies = [
+ "cgmath",
+ "device_query",
+ "glium",
+ "image",
+ "noise",
+ "rand",
+]
 
 [[package]]
 name = "pkg-config"
