@@ -1,8 +1,6 @@
 use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
-use glium::{implement_vertex, uniform};
 use pixelquest::camera::camera::Camera;
-use pixelquest::graphics::cube::{create_cube_vertices, FaceUVs, Vertex};
 use pixelquest::graphics::texture::{calculate_tile_uvs, create_block_texture, init_uvs, UVS};
 use pixelquest::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
@@ -30,8 +28,6 @@ fn main() {
 
     
     init_uvs();
-
-    // let uvs = UVS.get().unwrap();
     let uvs =  UVS.get().and_then(|map| map.get("dark_grass")).cloned().expect("No uvs found");
 
     let offset = Vector3::new(0.0, -3.0, 0.0);

@@ -4,7 +4,7 @@ use cgmath::{Point3, Vector3};
 use glium::{glutin::surface::WindowSurface, uniforms::Sampler};
 use noise::{NoiseFn, Perlin};
 
-use crate::graphics::cube::{create_cube_vertices, FaceUVs, Vertex};
+use crate::graphics::cube::{create_single_tx_cube_vertices, FaceUVs, Vertex};
 
 const CHUNK_SIZE: i32 = 16;
 const OVERLAP: i32 = 1; // Amount of overlap with neighboring chunks
@@ -32,7 +32,7 @@ pub fn generate_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_height: i
         for z in 0..CHUNK_SIZE {
             for y in 0..=flat_height {  // Ensure the flat terrain is generated up to the specified height
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
-                let cube_vertices = create_cube_vertices(uvs, Point3::new(0.0, 0.0, 0.0), offset);
+                let cube_vertices = create_single_tx_cube_vertices( Point3::new(0.0, 0.0, 0.0), offset);
 
                 let base_index = vertices.len() as u32;
                 vertices.extend_from_slice(&cube_vertices);
@@ -92,7 +92,7 @@ pub fn generate_mountainous_terrain(
                     for y in (flat_height + 1)..=height {
                         if is_block_exposed(x, y, z, &height_map) {
                             let offset = Vector3::new(x as f32, y as f32, z as f32);
-                            let cube_vertices = create_cube_vertices(uvs, Point3::new(0.0, 0.0, 0.0), offset);
+                            let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset);
 
                             let base_index = vertices.len() as u32;
                             vertices.extend_from_slice(&cube_vertices);
@@ -198,7 +198,7 @@ pub fn generate_flat_chunk(uvs: &FaceUVs, chunk_position: Point3<i32>, flat_heig
                 // Only render blocks that are exposed (surface blocks in this case)
                 if y == flat_height {
                     let offset = Vector3::new(x as f32, y as f32, z as f32);
-                    let cube_vertices = create_cube_vertices(uvs, Point3::new(0.0, 0.0, 0.0), offset);
+                    let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset);
 
                     let base_index = vertices.len() as u32;
                     vertices.extend_from_slice(&cube_vertices);

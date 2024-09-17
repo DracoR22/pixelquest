@@ -62,8 +62,8 @@ pub fn get_uvs(name: &str) -> Option<FaceUVs> {
 }
 
 pub fn create_block_texture(display: &Display<WindowSurface>, ) -> glium::Texture2d {
-let image = image::load(std::io::Cursor::new(&include_bytes!("../..//assets/blocks/blocks.jpg")),
-    image::ImageFormat::Jpeg).unwrap().to_rgba8();
+let image = image::load(std::io::Cursor::new(&include_bytes!("../../res/blocks/dark-grass.png")),
+    image::ImageFormat::Png).unwrap().to_rgba8();
   let image_dimensions = image.dimensions();
   let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
   let texture = glium::Texture2d::new(display, image).unwrap();
