@@ -1,11 +1,12 @@
 use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
 use pixelquest::camera::camera::Camera;
-use pixelquest::graphics::texture::{calculate_tile_uvs, create_block_texture, init_uvs, UVS};
+use pixelquest::graphics::cube::create_single_tx_cube_vertices;
+use pixelquest::graphics::texture::{calculate_tile_uvs, create_texture, init_uvs, UVS};
 use pixelquest::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
-use cgmath::{perspective, Deg, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
-use pixelquest::world::chunk::{generate_chunk, CUBE_INDICES};
+use cgmath::{perspective, Deg, EuclideanSpace, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
+use pixelquest::world::chunk::{generate_chunk, Chunk, ChunkData, CUBE_INDICES};
 
 use pixelquest::world::world::World;
 
@@ -24,33 +25,18 @@ fn main() {
     );
 
     // load images
-    let texture = create_block_texture(&display);
+    let texture = create_texture(&display, "res/blocks/dark-grass.png");
 
     
-    init_uvs();
-    let uvs =  UVS.get().and_then(|map| map.get("dark_grass")).cloned().expect("No uvs found");
+    // init_uvs();
+    // let uvs =  UVS.get().and_then(|map| map.get("dark_grass")).cloned().expect("No uvs found");
 
-    let offset = Vector3::new(0.0, -3.0, 0.0);
+    let offset = Vector3::new(0.0, 0.0, 0.0);
     
-    // create cube
-    // let vertices = create_cube_vertices(&uvs, camera.position, offset);
-    // let vertices2 = create_cube_vertices(&uvs, camera.position, offset2);
-
-    //     // Combine vertices into a single vector
-    //     let mut combined_vertices = Vec::from(vertices);
-    //     combined_vertices.extend_from_slice(&vertices2);
-
-    // let mut chunk_data = generate_chunk(uvs, camera.position);
-    
-
     // Improve texture quality, idk if I see a change lol
     let sampler = glium::uniforms::Sampler::new(&texture)
         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);
-
-    // Create chunk buffers
-    // let mut vertex_buffer = glium::vertex::VertexBuffer::new(&display, &chunk_data.vertices).unwrap();
-    // let mut index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &chunk_data.indices).unwrap();
 
     let program = glium::Program::from_source(&display, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC, None).unwrap();
 
@@ -66,7 +52,12 @@ fn main() {
     window.set_cursor_grab(glium::winit::window::CursorGrabMode::Confined).unwrap();
     window.set_cursor_visible(false);
 
-    let mut world = World::new(&display, &uvs);
+    let mut world = World::new(&display);
+
+    let textures: Vec<glium::Texture2d> = vec![
+        create_texture(&display, "res/blocks/dark-grass.png"),
+        create_texture(&display, "res/blocks/light-grass.png"),
+    ];
 
     let _ = event_loop.run(move |event, window_target| {
         let current_frame = std::time::Instant::now();
@@ -94,38 +85,49 @@ fn main() {
                     let perspective: Matrix4<f32> = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
                 
                     // Update world based on the camera's current position (for infinite terrain generation)
-                    world.update(camera.position, &display, &uvs); // <- Add this to update the world
+                    world.update(camera.position, &display); // <- Add this to update the world
                 
                     // Render the world with the updated camera and perspective
-                    world.render(&mut target, &program, &camera, perspective, sampler);
+                    world.render(&mut target, &program, &camera, perspective, sampler, &textures);
                 
                     // Finalize drawing and display the frame
                     target.finish().unwrap();
                 },
                 glium::winit::event::WindowEvent::MouseInput { state, button, .. } => {
                     if button == MouseButton::Left && state == ElementState::Pressed {
-                        
-                        println!("Left mouse clicked, {:?}", current_mouse_position);
+                     // Use the camera's current position to spawn the cube
+                     let cube_position: Point3<f32> = camera.position;
+                     let cube_position_vec: Vector3<f32> = Vector3::new(camera.position.x, camera.position.y, 0.0);
 
-                          // Hardcoded offset for the new cube
-                        // let offset = Vector3::new(1.0, 0.0, 0.0);
-
-                        // // Generate vertices for the new cube
-                        // let new_cube_vertices = create_cube_vertices(&uvs, camera.position, offset);
-
-                        // // Add new vertices to the chunk data
-                        // let base_index = chunk_data.vertices.len() as u32;
-                        // chunk_data.vertices.extend_from_slice(&new_cube_vertices);
-
-                        // // Generate and add indices for the new cube
-                        // let new_cube_indices: Vec<u32> = CUBE_INDICES.iter()
-                        //     .map(|&idx| idx as u32 + base_index)
-                        //     .collect();
-                        // chunk_data.indices.extend_from_slice(&new_cube_indices);
-
-                        // // Update vertex and index buffers
-                        // vertex_buffer = glium::vertex::VertexBuffer::new(&display, &chunk_data.vertices).unwrap();
-                        // index_buffer = glium::index::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &chunk_data.indices).unwrap();
+                    // Access the chunks from World struct
+                     for chunk in world.chunks.iter_mut() {
+                    // Check if the cube's position belongs to this chunk
+                    if is_position_in_chunk(cube_position_vec, chunk) {
+                    // Generate new cube vertices
+                   
+                    let new_cube_vertices = create_single_tx_cube_vertices(cube_position, offset, 1);
+        
+                    // Add vertices to chunk's vertex list
+                   let base_index = chunk.chunk_data.vertices.len() as u32;
+                   chunk.chunk_data.vertices.extend_from_slice(&new_cube_vertices);
+        
+                    // Generate indices for the new cube and add them to the chunk
+                   let new_cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                   .map(|&idx| idx as u32 + base_index)
+                   .collect();
+                   chunk.chunk_data.indices.extend_from_slice(&new_cube_indices);
+        
+                   // Recreate the vertex and index buffers for the chunk
+                  chunk.vertex_buffer = glium::VertexBuffer::new(&display, &chunk.chunk_data.vertices).unwrap();
+                  chunk.index_buffer = glium::IndexBuffer::new(
+                &display,
+                glium::index::PrimitiveType::TrianglesList,
+                &chunk.chunk_data.indices
+                ).unwrap();
+        
+                println!("Added a new cube at camera position {:?}", cube_position);
+                break;
+                 }}
                     }
                 },
                 _ => (),
@@ -179,4 +181,14 @@ fn main() {
             _ => (),
         }
     });
+}
+
+fn is_position_in_chunk(position: Vector3<f32>, chunk: &Chunk) -> bool {
+    let chunk_x = chunk.position.x as f32 * 16 as f32;
+    let chunk_y = chunk.position.y as f32 * 16 as f32;
+    let chunk_z = chunk.position.z as f32 * 16 as f32;
+
+    position.x >= chunk_x && position.x < chunk_x + 16 as f32 &&
+    position.y >= chunk_y && position.y < chunk_y + 16 as f32 &&
+    position.z >= chunk_z && position.z < chunk_z + 16 as f32
 }

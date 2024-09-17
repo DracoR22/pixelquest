@@ -17,7 +17,7 @@ fn bench_block_vertices_generation(c: &mut Criterion) {
     let offset = Vector3::new(0.0, -3.0, 0.0);
 
     c.bench_function("block vertices generation", |b| {
-        b.iter(|| create_single_tx_cube_vertices(black_box(camera.position), black_box(offset)))
+        b.iter(|| create_single_tx_cube_vertices(black_box(camera.position), black_box(offset), 0))
     });
 }
 

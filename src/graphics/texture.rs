@@ -1,6 +1,7 @@
 use std::{cell::OnceCell, collections::HashMap, sync::OnceLock};
 
 use glium::{glutin::surface::WindowSurface, Display};
+use glium::texture::{RawImage2d, Texture2dArray};
 
 use super::cube::FaceUVs;
 
@@ -61,12 +62,9 @@ pub fn get_uvs(name: &str) -> Option<FaceUVs> {
     UVS.get().and_then(|map| map.get(name)).cloned()
 }
 
-pub fn create_block_texture(display: &Display<WindowSurface>, ) -> glium::Texture2d {
-let image = image::load(std::io::Cursor::new(&include_bytes!("../../res/blocks/dark-grass.png")),
-    image::ImageFormat::Png).unwrap().to_rgba8();
-  let image_dimensions = image.dimensions();
-  let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-  let texture = glium::Texture2d::new(display, image).unwrap();
-   
-  texture
+pub fn create_texture(display: &glium::Display<WindowSurface>, path: &str) -> glium::Texture2d {
+    let image = image::open(path).unwrap().to_rgba8();
+    let dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), dimensions);
+    glium::Texture2d::new(display, image).unwrap()
 }

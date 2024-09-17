@@ -13,7 +13,7 @@ pub struct World {
 }
 
 impl World {
-    pub fn new(display: &glium::Display<WindowSurface>, uvs: &FaceUVs) -> Self {
+    pub fn new(display: &glium::Display<WindowSurface>) -> Self {
         let mut chunks = Vec::new();
         let chunk_size = 16; // Define chunk size
         let grid_size = 13;  // Define grid size
@@ -26,7 +26,7 @@ impl World {
         for x in -half_grid_size..=half_grid_size {
             for z in -half_grid_size..=half_grid_size {
                 let chunk_position = Point3::new(x, 0, z);
-                chunks.push(Chunk::new(display, uvs, chunk_position));
+                chunks.push(Chunk::new(display, chunk_position));
             }
         }
 
@@ -38,7 +38,7 @@ impl World {
         }
     }
 
-    pub fn update(&mut self, camera_position: Point3<f32>, display: &glium::Display<WindowSurface>, uvs: &FaceUVs) {
+    pub fn update(&mut self, camera_position: Point3<f32>, display: &glium::Display<WindowSurface>) {
         // Convert the camera's world position to chunk coordinates
         let camera_chunk_x = (camera_position.x / self.chunk_size as f32).floor() as i32;
         let camera_chunk_z = (camera_position.z / self.chunk_size as f32).floor() as i32;
@@ -47,7 +47,7 @@ impl World {
         // Check if the camera has moved to a new chunk
         if camera_chunk_position != self.last_camera_chunk_position {
             // Generate and load new chunks around the new camera chunk position
-            self.generate_chunks_around(display, uvs, camera_chunk_position);
+            self.generate_chunks_around(display, camera_chunk_position);
 
             // Unload far chunks
             self.unload_distant_chunks(camera_chunk_position);
@@ -61,7 +61,6 @@ impl World {
     fn generate_chunks_around(
         &mut self,
         display: &glium::Display<WindowSurface>,
-        uvs: &FaceUVs,
         camera_chunk_position: Point3<i32>,
     ) {
         for x in -self.chunk_radius..=self.chunk_radius {
@@ -74,7 +73,7 @@ impl World {
 
                 // Check if the chunk already exists
                 if !self.chunk_exists(chunk_position) {
-                    self.chunks.push(Chunk::new(display, uvs, chunk_position));
+                    self.chunks.push(Chunk::new(display, chunk_position));
                 }
             }
         }
@@ -116,7 +115,7 @@ impl World {
     //     World { chunks, chunk_size }
     // }
 
-    pub fn render(&self, target: &mut glium::Frame, program: &glium::Program, camera: &Camera, perspective: Matrix4<f32>, sampler: Sampler<'_, glium::Texture2d>) {
+    pub fn render(&self, target: &mut glium::Frame, program: &glium::Program, camera: &Camera, perspective: Matrix4<f32>, sampler: Sampler<'_, glium::Texture2d>, textures: &Vec<glium::Texture2d>) {
         let view = camera.get_view_matrix();
         let light = [-1.0, 0.4, 0.9f32];
 
@@ -147,7 +146,8 @@ impl World {
                         view: Into::<[[f32; 4]; 4]>::into(view),
                         perspective: Into::<[[f32; 4]; 4]>::into(perspective),
                         u_light: light,
-                        tex: sampler,
+                        tex0: textures[0].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                        tex1: textures[1].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                         fog_color: [0.7, 0.85, 1.0f32],  // Slightly bluer, closer to sky color
                         fog_start: 50.0f32,  // Increased from 5.0
                         fog_end: 150.0f32,   // Increased from 60.0
