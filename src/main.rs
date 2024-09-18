@@ -1,7 +1,7 @@
 use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
 use pixelquest::camera::camera::Camera;
-use pixelquest::constants::world::CUBE_INDICES;
+use pixelquest::constants::world::{CHUNK_SIZE, CUBE_INDICES};
 use pixelquest::graphics::cube::create_single_tx_cube_vertices;
 use pixelquest::graphics::texture::{calculate_tile_uvs, create_texture, init_uvs, UVS};
 use pixelquest::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
@@ -91,7 +91,7 @@ fn main() {
                     world.update(camera.position, &display); // <- Add this to update the world
                 
                     // Render the world with the updated camera and perspective
-                    world.render(&mut target, &program, &camera, perspective, sampler, &textures);
+                    world.render(&mut target, &program, &camera, perspective, &textures);
                 
                     // Finalize drawing and display the frame
                     target.finish().unwrap();
@@ -105,7 +105,7 @@ fn main() {
                     // Access the chunks from World struct
                      for chunk in world.chunks.iter_mut() {
                     // Check if the cube's position belongs to this chunk
-                    if is_position_in_chunk(cube_position_vec, chunk) {
+                    // if is_position_in_chunk(cube_position_vec, chunk) {
                     // Generate new cube vertices
                    
                     let new_cube_vertices = create_single_tx_cube_vertices(cube_position, offset, 1);
@@ -131,7 +131,7 @@ fn main() {
                 println!("Added a new cube at camera position {:?}", cube_position);
                 break;
                  }}
-                    }
+                    // }
                 },
                 _ => (),
             },

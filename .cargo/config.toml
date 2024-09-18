@@ -1,0 +1,4 @@
+[profile.dev]
+# Configurations for development builds (faster build times)
+opt-level = 0    # No optimizations for faster compiles
+debug = true     # Include debug symbols for easier debugging

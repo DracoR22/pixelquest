@@ -14,5 +14,5 @@ fn test_block_vertices_generation() {
 
     let offset = Vector3::new(0.0, -3.0, 0.0);
     
-    create_single_tx_cube_vertices(camera.position, offset);
+    create_single_tx_cube_vertices(camera.position, offset, 0);
 }

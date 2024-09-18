@@ -14,7 +14,7 @@ pub struct World {
 
 impl World {
     pub fn new(display: &glium::Display<WindowSurface>) -> Self {
-        let mut chunks = Vec::new();
+        let mut chunks: Vec<Chunk> = Vec::new();
         let chunk_size = 16; // Define chunk size
         let grid_size = 13;  // Define grid size
         let chunk_radius = 5; // Set how far chunks will be generated around the camera
@@ -93,7 +93,7 @@ impl World {
         });
     }
 
-    pub fn render(&self, target: &mut glium::Frame, program: &glium::Program, camera: &Camera, perspective: Matrix4<f32>, sampler: Sampler<'_, glium::Texture2d>, textures: &Vec<glium::Texture2d>) {
+    pub fn render(&self, target: &mut glium::Frame, program: &glium::Program, camera: &Camera, perspective: Matrix4<f32>, textures: &Vec<glium::Texture2d>) {
         let view = camera.get_view_matrix();
         let light = [-1.0, 0.4, 0.9f32];
 

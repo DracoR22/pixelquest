@@ -6,7 +6,7 @@ use noise::{NoiseFn, Perlin};
 
 use crate::graphics::cube::{create_single_tx_cube_vertices, FaceUVs, Vertex};
 
-use super::terrain::{generate_flat_terrain, generate_mountainous_terrain, generate_spiral_mountain_terrain};
+use super::terrain::{generate_flat_terrain, generate_mountainous_terrain, generate_spiral_mountain_terrain, generate_unbalanced_terrain};
 
 const CHUNK_SIZE: i32 = 16;
 const OVERLAP: i32 = 1; // Amount of overlap with neighboring chunks
@@ -48,8 +48,9 @@ pub fn generate_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkDat
     match biome {
         Biome::Plains => {
            generate_flat_terrain(flat_height + 1, &mut vertices, &mut indices, 0);
+        //    generate_unbalanced_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, scale, 3.0, extended_size, 0, 3);
+        generate_spiral_mountain_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2, 0.01, 3.0, extended_size, 0, 3,  5.0, 1.0);
            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 20,  perlin, 0.01, 60.0, extended_size, 0, 3, 10);
-        //    generate_spiral_mountain_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 3, 0.01, 3.0, extended_size, 0, 20.0, 1.0);
         
         }
         Biome::Mountains => {
@@ -83,6 +84,7 @@ impl Chunk {
         let flat_height = 0; // Define a flat terrain height
         let chunk_data = generate_chunk(position, flat_height); // Generate chunk with both flat terrain and mountains
 
+        // create vertex and index buffer we got from chunk data struct
         let vertex_buffer = glium::VertexBuffer::new(display, &chunk_data.vertices).unwrap();
         let index_buffer = glium::IndexBuffer::new(
             display,
@@ -101,7 +103,7 @@ impl Chunk {
 
 pub fn generate_biome_for_chunk(chunk_position: Point3<i32>) -> Biome {
     let biome_noise = Perlin::new(100);  // Seed for biome noise
-    let scale = 0.02;  // Control size of biome regions
+    let scale = 0.05;  // Control size of biome regions
     let scaled_x = chunk_position.x as f64 * scale;
     let scaled_z = chunk_position.z as f64 * scale;
 
