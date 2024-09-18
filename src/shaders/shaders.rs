@@ -50,6 +50,7 @@ out vec4 color;
 uniform vec3 u_light;
 uniform sampler2D tex0;
 uniform sampler2D tex1;
+uniform sampler2D tex2;
 // Add more texture uniforms as needed (tex2, tex3, etc.)
 uniform vec3 fog_color;
 
@@ -63,6 +64,8 @@ void main() {
         diffuse_color = texture(tex0, v_tex_coords).rgb;
     } else if (v_texture_id == 1u) {
         diffuse_color = texture(tex1, v_tex_coords).rgb;
+    } else if (v_texture_id == 2u) {
+        diffuse_color = texture(tex2, v_tex_coords).rgb;
     }
     // Add more texture_id checks as needed
     

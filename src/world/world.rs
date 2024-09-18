@@ -93,28 +93,6 @@ impl World {
         });
     }
 
-
-
-
-    // pub fn new_flat_world(display: &glium::Display<WindowSurface>, uvs: &FaceUVs, flat_height: i32) -> Self {
-    //     let mut chunks = Vec::new();
-    //     let chunk_size = 16;
-    //     let grid_size = 3; // Define the size of the grid (e.g., 3x3)
-    
-    //     // Calculate the range based on the grid size
-    //     let range = -(grid_size as i32 / 2)..=(grid_size as i32 / 2);
-    
-    //     // Generate a grid of flat chunks
-    //     for x in range.clone() {
-    //         for z in range.clone() {
-    //             let chunk_position = Point3::new(x, 0, z);
-    //             chunks.push(Chunk::new_flat(display, uvs, chunk_position, flat_height));
-    //         }
-    //     }
-    
-    //     World { chunks, chunk_size }
-    // }
-
     pub fn render(&self, target: &mut glium::Frame, program: &glium::Program, camera: &Camera, perspective: Matrix4<f32>, sampler: Sampler<'_, glium::Texture2d>, textures: &Vec<glium::Texture2d>) {
         let view = camera.get_view_matrix();
         let light = [-1.0, 0.4, 0.9f32];
@@ -148,6 +126,7 @@ impl World {
                         u_light: light,
                         tex0: textures[0].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                         tex1: textures[1].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                        tex2: textures[2].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                         fog_color: [0.7, 0.85, 1.0f32],  // Slightly bluer, closer to sky color
                         fog_start: 50.0f32,  // Increased from 5.0
                         fog_end: 150.0f32,   // Increased from 60.0

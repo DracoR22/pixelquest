@@ -57,6 +57,7 @@ fn main() {
     let textures: Vec<glium::Texture2d> = vec![
         create_texture(&display, "res/blocks/dark-grass.png"),
         create_texture(&display, "res/blocks/light-grass.png"),
+        create_texture(&display, "res/blocks/light-sand.png")
     ];
 
     let _ = event_loop.run(move |event, window_target| {

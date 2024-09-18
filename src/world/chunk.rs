@@ -9,7 +9,7 @@ use crate::graphics::cube::{create_single_tx_cube_vertices, FaceUVs, Vertex};
 const CHUNK_SIZE: i32 = 16;
 const OVERLAP: i32 = 1; // Amount of overlap with neighboring chunks
 
-enum Biome {
+pub enum Biome {
     Plains,
     Mountains,
     Desert,
@@ -39,11 +39,41 @@ pub fn generate_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkDat
     let extended_size = CHUNK_SIZE + 2 * OVERLAP;
 
      // Generate the flat base layer
-     for x in 0..CHUNK_SIZE {
+     generate_flat_terrain(flat_height, &mut vertices, &mut indices, 0);
+
+       // Generate the mountainous terrain
+    // generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, scale, height_scale, extended_size, 0);
+    match biome {
+        Biome::Plains => {
+           generate_flat_terrain(flat_height + 1, &mut vertices, &mut indices, 0);
+           generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 3,  perlin, 0.02, 3.0, extended_size, 0);
+        
+        }
+        Biome::Mountains => {
+              // Generate the mountainous terrain
+            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, scale, 1.0, extended_size, 0);
+            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.05, 20.0, extended_size, 0);
+        }    
+        Biome::Desert => {
+              // Generate the mountainous terrain
+            generate_flat_terrain(flat_height + 1, &mut vertices, &mut indices, 2);
+            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.03, 3.0, extended_size, 2);
+            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.05, 10.0, extended_size, 2);
+        }
+    }
+    
+    ChunkData {
+        indices,
+        vertices,
+    }
+}
+
+pub fn generate_flat_terrain(flat_height: i32, vertices: &mut Vec<Vertex>, indices: &mut Vec<u32>, texture_id: u32) {
+    for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
-            for y in 0..=flat_height {  // Ensure the flat terrain is generated up to the specified height
+            for y in 0..= flat_height {  // Ensure the flat terrain is generated up to the specified height
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
-                let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, 0);
+                let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
 
                 let base_index = vertices.len() as u32;
                 vertices.extend_from_slice(&cube_vertices);
@@ -53,44 +83,7 @@ pub fn generate_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkDat
                     .collect();
                 indices.extend_from_slice(&cube_indices);
             }
-        }
-    }
-
-    // Generate the mountainous terrain
-    generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, scale, height_scale, extended_size, 0);
-
-    match biome {
-        Biome::Plains => {
-            for x in 0..CHUNK_SIZE {
-                for z in 0..CHUNK_SIZE {
-                    for y in 0..=flat_height {  // Ensure the flat terrain is generated up to the specified height
-                        let offset = Vector3::new(x as f32, y as f32, z as f32);
-                        let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, 0);
-        
-                        let base_index = vertices.len() as u32;
-                        vertices.extend_from_slice(&cube_vertices);
-        
-                        let cube_indices: Vec<u32> = CUBE_INDICES.iter()
-                            .map(|&idx| idx as u32 + base_index)
-                            .collect();
-                        indices.extend_from_slice(&cube_indices);
-                    }
-                }
-            }
-        
-        }
-        Biome::Mountains => {
-            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.05, 20.0, extended_size, 0);
-        }    
-        Biome::Desert => {
-            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.05, 20.0, extended_size, 0);
-        }
-    }
-    
-    ChunkData {
-        indices,
-        vertices,
-    }
+        }}
 }
 
 pub fn generate_mountainous_terrain(
@@ -194,27 +187,7 @@ impl Chunk {
             position,
             chunk_data
         }
-    }
-
-    pub fn new_flat(display: &glium::Display<WindowSurface>, position: Point3<i32>, flat_height: i32) -> Self {
-        let chunk_data = generate_flat_chunk(position, flat_height);
-
-        let vertex_buffer = glium::VertexBuffer::new(display, &chunk_data.vertices).unwrap();
-        let index_buffer = glium::IndexBuffer::new(
-            display,
-            glium::index::PrimitiveType::TrianglesList,
-            &chunk_data.indices,
-        )
-        .unwrap();
-
-        Chunk {
-            vertex_buffer,
-            index_buffer,
-            position,
-            chunk_data
-        }
-    }
-}
+    }}
 
 pub const CUBE_INDICES: [u16; 36] = [
     0,  1,  2,  2,  3,  0, // front
@@ -228,7 +201,11 @@ pub const CUBE_INDICES: [u16; 36] = [
 pub fn generate_biome_for_chunk(chunk_position: Point3<i32>) -> Biome {
     let biome_noise = Perlin::new(100);  // Seed for biome noise
     let scale = 0.05;  // Control size of biome regions
-    let noise_value = biome_noise.get([chunk_position.x as f64 * scale, chunk_position.z as f64 * scale]);
+    let scaled_x = chunk_position.x as f64 * scale;
+    let scaled_z = chunk_position.z as f64 * scale;
+
+    // Generate smooth transitions between biomes using noise
+    let noise_value = biome_noise.get([scaled_x, scaled_z]);
 
     if noise_value < -0.3 {
         Biome::Desert
@@ -236,37 +213,5 @@ pub fn generate_biome_for_chunk(chunk_position: Point3<i32>) -> Biome {
         Biome::Plains
     } else {
         Biome::Mountains
-    }
-}
-
-
-pub fn generate_flat_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkData {
-    let mut vertices = Vec::new();
-    let mut indices = Vec::new();
-
-    // Create a flat chunk with a specified height for all blocks
-    for x in 0..CHUNK_SIZE {
-        for z in 0..CHUNK_SIZE {
-            for y in 0..=flat_height {
-                // Only render blocks that are exposed (surface blocks in this case)
-                if y == flat_height {
-                    let offset = Vector3::new(x as f32, y as f32, z as f32);
-                    let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, 0);
-
-                    let base_index = vertices.len() as u32;
-                    vertices.extend_from_slice(&cube_vertices);
-
-                    let cube_indices: Vec<u32> = CUBE_INDICES.iter()
-                        .map(|&idx| idx as u32 + base_index)
-                        .collect();
-                    indices.extend_from_slice(&cube_indices);
-                }
-            }
-        }
-    }
-
-    ChunkData {
-        indices,
-        vertices,
     }
 }
