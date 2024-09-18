@@ -1,12 +1,13 @@
 use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
 use pixelquest::camera::camera::Camera;
+use pixelquest::constants::world::CUBE_INDICES;
 use pixelquest::graphics::cube::create_single_tx_cube_vertices;
 use pixelquest::graphics::texture::{calculate_tile_uvs, create_texture, init_uvs, UVS};
 use pixelquest::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, EuclideanSpace, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
-use pixelquest::world::chunk::{generate_chunk, Chunk, ChunkData, CUBE_INDICES};
+use pixelquest::world::chunk::{generate_chunk, Chunk, ChunkData};
 
 use pixelquest::world::world::World;
 
@@ -57,7 +58,8 @@ fn main() {
     let textures: Vec<glium::Texture2d> = vec![
         create_texture(&display, "res/blocks/dark-grass.png"),
         create_texture(&display, "res/blocks/light-grass.png"),
-        create_texture(&display, "res/blocks/light-sand.png")
+        create_texture(&display, "res/blocks/light-sand.png"),
+        create_texture(&display, "res/blocks/rock-1.png")
     ];
 
     let _ = event_loop.run(move |event, window_target| {
