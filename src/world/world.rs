@@ -127,7 +127,8 @@ impl World {
                         tex0: textures[0].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                         tex1: textures[1].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                         tex2: textures[2].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                        tex2: textures[3].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                        tex3: textures[3].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                        tex4: textures[4].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                         fog_color: [0.7, 0.85, 1.0f32],  // Slightly bluer, closer to sky color
                         fog_start: 50.0f32,  // Increased from 5.0
                         fog_end: 150.0f32,   // Increased from 60.0

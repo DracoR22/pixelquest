@@ -1,7 +1,47 @@
 use cgmath::{Point3, Vector3};
 use noise::{Perlin, NoiseFn};
+use rand::Rng;
 
 use crate::{constants::world::{CHUNK_SIZE, CUBE_INDICES, OVERLAP}, graphics::cube::{create_single_tx_cube_vertices, Vertex}};
+
+pub struct Terrain {
+    pub chunk_position: Point3<i32>,
+    pub flat_height: i32,
+    pub vertices: Vec<Vertex>,
+    pub indices: Vec<u32>,
+
+}
+
+impl Terrain {
+    pub fn new(flat_height: i32, vertices: Vec<Vertex>, indices: Vec<u32>, chunk_position: Point3<i32>) -> Self {
+       Terrain {
+        flat_height,
+        indices, 
+        vertices,
+        chunk_position
+       }
+    }
+
+    pub fn generate_flat_terrain(&mut self, add_height: Option<i32>, texture_id: u32) {
+        let height = self.flat_height + add_height.unwrap_or(0);
+        for x in 0..CHUNK_SIZE {
+            for z in 0..CHUNK_SIZE {
+                for y in 0..= height {  // Ensure the flat terrain is generated up to the specified height
+                    let offset = Vector3::new(x as f32, y as f32, z as f32);
+                    let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
+    
+                    // generate vertices and indices for each vertex
+                    let base_index = self.vertices.len() as u32;
+                    self.vertices.extend_from_slice(&cube_vertices);
+    
+                    let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                        .map(|&idx| idx as u32 + base_index)
+                        .collect();
+                    self.indices.extend_from_slice(&cube_indices);
+                }
+            }}
+    }
+}
 
 pub fn generate_flat_terrain(flat_height: i32, vertices: &mut Vec<Vertex>, indices: &mut Vec<u32>, texture_id: u32) {
     for x in 0..CHUNK_SIZE {
@@ -10,6 +50,7 @@ pub fn generate_flat_terrain(flat_height: i32, vertices: &mut Vec<Vertex>, indic
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
                 let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
 
+                // generate vertices and indices for each vertex
                 let base_index = vertices.len() as u32;
                 vertices.extend_from_slice(&cube_vertices);
 
@@ -26,21 +67,22 @@ pub fn generate_mountainous_terrain(
     flat_height: i32,
     vertices: &mut Vec<Vertex>,
     indices: &mut Vec<u32>,
-    mountain_width: i32, 
     perlin: Perlin,
     scale: f64,
     height_scale: f64,
     extended_size: i32,
     upper_texture_id: u32,
     lower_texture_id: u32,
-    lower_portion_height: i32
+    _lower_portion_height: i32, // No longer used for texture selection
 ) {
     let mut height_map = vec![vec![0; extended_size as usize]; extended_size as usize];
+    let mut rng = rand::thread_rng(); // Initialize random number generator
+
     // Generate Perlin noise for the height map
     for x in 0..extended_size {
         for z in 0..extended_size {
-            let world_x = (chunk_position.x * CHUNK_SIZE + x - OVERLAP) as f64;
-            let world_z = (chunk_position.z * CHUNK_SIZE + z - OVERLAP) as f64;
+            let world_x = (chunk_position.x * CHUNK_SIZE + x) as f64;
+            let world_z = (chunk_position.z * CHUNK_SIZE + z) as f64;
 
             let noise_value = perlin.get([world_x * scale, world_z * scale]);
             let height = (noise_value * height_scale).round() as i32 + flat_height;
@@ -55,9 +97,11 @@ pub fn generate_mountainous_terrain(
             for y in (flat_height + 1)..=base_height {
                 if is_block_exposed(x, y, z, &height_map) {
                     let offset = Vector3::new(x as f32, y as f32, z as f32);
-                    
-                    // Determine which texture to use
-                    let texture_id = if y <= flat_height + lower_portion_height {
+
+                    // Randomly determine which texture to use
+                    let random_chance: f32 = rng.gen(); // Generate a random float between 0.0 and 1.0
+                    let texture_id = if random_chance < 0.2 {
+                        // 20% chance to apply the lower texture
                         lower_texture_id
                     } else {
                         upper_texture_id
@@ -157,65 +201,93 @@ pub fn generate_spiral_mountain_terrain(
     }
 }
 
-pub fn generate_unbalanced_terrain(
+
+pub fn generate_trees(
     chunk_position: Point3<i32>,
     flat_height: i32,
     vertices: &mut Vec<Vertex>,
     indices: &mut Vec<u32>,
-    mountain_width: i32, 
-    perlin: Perlin,
-    scale: f64,
-    height_scale: f64,
-    extended_size: i32,
-    texture_id_1: u32, // First texture ID
-    texture_id_2: u32, // Second texture ID
+    perlin: &Perlin,
+    tree_density: f64,
+    tree_height: i32,
+    trunk_texture_id: u32,
+    leaf_texture_id: u32
 ) {
-    let mut height_map = vec![vec![0; extended_size as usize]; extended_size as usize];
+    let tree_scale = 0.05; // Adjust this to change the distribution of trees
 
-    // Generate Perlin noise for the height map
-    for x in 0..extended_size {
-        for z in 0..extended_size {
-            let world_x = (chunk_position.x * CHUNK_SIZE + x - OVERLAP) as f64;
-            let world_z = (chunk_position.z * CHUNK_SIZE + z - OVERLAP) as f64;
-
-            let noise_value = perlin.get([world_x * scale, world_z * scale]);
-            let height = (noise_value * height_scale).round() as i32 + flat_height; // Added flat terrain height
-            height_map[x as usize][z as usize] = height;
-        }
-    }
-
-    // Iterate over the chunk and alternate the textures
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
-            let base_height = height_map[(x + OVERLAP) as usize][(z + OVERLAP) as usize];
+            let world_x = (chunk_position.x * CHUNK_SIZE + x) as f64;
+            let world_z = (chunk_position.z * CHUNK_SIZE + z) as f64;
 
-            for dy in 0..mountain_width {
-                let height = base_height + dy;
+            // Use Perlin noise to determine if a tree should be placed
+            let noise_value = perlin.get([world_x * tree_scale, world_z * tree_scale]);
 
-                if height > flat_height {
-                    for y in (flat_height + 1)..=height {
-                        if is_block_exposed(x, y, z, &height_map) {
-                            let offset = Vector3::new(x as f32, y as f32, z as f32);
+            if noise_value > 1.0 - tree_density {
+                // Use flat_height as the base height for all trees
+                let base_height = flat_height;
 
-                            // Alternate textures based on position (e.g., checkerboard pattern)
-                            let texture_id = if (x + z) % 2 == 0 { 
-                                texture_id_1  // Use first texture for even sums of x + z
-                            } else {
-                                texture_id_2  // Use second texture for odd sums of x + z
-                            };
+                // We don't need to check if the location is suitable since it's flat terrain
+                generate_tree(
+                    x as f32,
+                    base_height as f32,
+                    z as f32,
+                    tree_height,
+                    vertices,
+                    indices,
+                    trunk_texture_id,
+                    leaf_texture_id
+                );
+            }
+        }
+    }
+}
 
-                            // Generate cube vertices with the selected texture
-                            let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
+fn generate_tree(
+    x: f32,
+    y: f32,
+    z: f32,
+    height: i32,
+    vertices: &mut Vec<Vertex>,
+    indices: &mut Vec<u32>,
+    trunk_texture_id: u32,
+    leaf_texture_id: u32
+) {
+    // Generate trunk
+    for i in 0..height {
+        let offset = Vector3::new(x, y + i as f32, z);
+        let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, trunk_texture_id);
+        let base_index = vertices.len() as u32;
+        vertices.extend_from_slice(&cube_vertices);
+        let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+            .map(|&idx| idx as u32 + base_index)
+            .collect();
+        indices.extend_from_slice(&cube_indices);
+    }
 
-                            let base_index = vertices.len() as u32;
-                            vertices.extend_from_slice(&cube_vertices);
+    // Generate spherical leaves
+    let leaf_center = Vector3::new(x, y + height as f32, z);
+    let leaf_radius = 3.0;  // Set the radius for the spherical canopy
 
-                            let cube_indices: Vec<u32> = CUBE_INDICES.iter()
-                                .map(|&idx| idx as u32 + base_index)
-                                .collect();
-                            indices.extend_from_slice(&cube_indices);
-                        }
-                    }
+    // Loop over a cube that encompasses the leaf sphere
+    for dx in -leaf_radius as i32..=leaf_radius as i32 {
+        for dy in -leaf_radius as i32..=leaf_radius as i32 {
+            for dz in -leaf_radius as i32..=leaf_radius as i32 {
+                // Calculate the position of the current leaf cube
+                let leaf_pos = leaf_center + Vector3::new(dx as f32, dy as f32, dz as f32);
+
+                // Calculate the distance from the leaf center
+                let distance = ((dx * dx + dy * dy + dz * dz) as f32).sqrt();
+
+                // Only place leaf cubes if they are within the radius of the sphere
+                if distance <= leaf_radius {
+                    let leaf_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), leaf_pos, leaf_texture_id);
+                    let base_index = vertices.len() as u32;
+                    vertices.extend_from_slice(&leaf_vertices);
+                    let leaf_indices: Vec<u32> = CUBE_INDICES.iter()
+                        .map(|&idx| idx as u32 + base_index)
+                        .collect();
+                    indices.extend_from_slice(&leaf_indices);
                 }
             }
         }
@@ -243,4 +315,40 @@ fn is_block_exposed(x: i32, y: i32, z: i32, height_map: &Vec<Vec<i32>>) -> bool 
     }
 
     false
+}
+
+pub fn generate_terrain_chunk(
+    chunk_position: Point3<i32>,
+    vertices: &mut Vec<Vertex>,
+    indices: &mut Vec<u32>,
+    perlin: &Perlin,
+    scale: f64,
+    height_scale: f64,
+    base_height: i32,
+    texture_id: u32,
+) {
+    for x in 0..CHUNK_SIZE {
+        for z in 0..CHUNK_SIZE {
+            let world_x = (chunk_position.x * CHUNK_SIZE + x) as f64;
+            let world_z = (chunk_position.z * CHUNK_SIZE + z) as f64;
+
+            // Get noise value for terrain height at this (x, z)
+            let noise_value = perlin.get([world_x * scale, world_z * scale]);
+            
+            // Map noise value (-1.0 to 1.0) to a terrain height (e.g., 0 to 30 blocks)
+            let terrain_height = ((noise_value + 1.0) / 2.0 * height_scale) as i32 + base_height;
+
+            // Generate blocks for terrain
+            for y in 0..terrain_height {
+                let offset = Vector3::new(x as f32, y as f32, z as f32);
+                let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
+                let base_index = vertices.len() as u32;
+                vertices.extend_from_slice(&cube_vertices);
+                let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                    .map(|&idx| idx as u32 + base_index)
+                    .collect();
+                indices.extend_from_slice(&cube_indices);
+            }
+        }
+    }
 }

@@ -6,7 +6,7 @@ use noise::{NoiseFn, Perlin};
 
 use crate::graphics::cube::{create_single_tx_cube_vertices, FaceUVs, Vertex};
 
-use super::terrain::{generate_flat_terrain, generate_mountainous_terrain, generate_spiral_mountain_terrain, generate_unbalanced_terrain};
+use super::terrain::{generate_flat_terrain, generate_mountainous_terrain, generate_spiral_mountain_terrain, generate_terrain_chunk, generate_trees};
 
 const CHUNK_SIZE: i32 = 16;
 const OVERLAP: i32 = 1; // Amount of overlap with neighboring chunks
@@ -40,6 +40,8 @@ pub fn generate_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkDat
     // Generate an extended height map for mountainous terrain
     let extended_size = CHUNK_SIZE + 2 * OVERLAP;
 
+    let mut extended_height_map: Vec<Vec<f64>> = vec![vec![0.0; extended_size as usize]; extended_size as usize];
+
      // Generate the flat base layer
      generate_flat_terrain(flat_height, &mut vertices, &mut indices, 0);
 
@@ -48,21 +50,71 @@ pub fn generate_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkDat
     match biome {
         Biome::Plains => {
            generate_flat_terrain(flat_height + 1, &mut vertices, &mut indices, 0);
-        //    generate_unbalanced_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, scale, 3.0, extended_size, 0, 3);
-        generate_spiral_mountain_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2, 0.01, 3.0, extended_size, 0, 3,  5.0, 1.0);
-           generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 20,  perlin, 0.01, 60.0, extended_size, 0, 3, 10);
-        
+          generate_terrain_chunk(
+           chunk_position, // Chunk position in the world
+           &mut vertices,  // Vertex buffer to store the chunk vertices
+           &mut indices,   // Index buffer to store the chunk indices
+           &perlin,        // Perlin noise instance
+        0.01,            // Lower noise scale for more detailed hills
+    10.0,           // Higher height scale for more dramatic height differences
+    1,              // Higher base height to lift the terrain off the ground more
+    0,              // Texture ID for terrain blocks
+);
+        // generate_spiral_mountain_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2, 0.01, 3.0, extended_size, 0, 3,  5.0, 1.0);
+        generate_trees(
+            chunk_position,
+            flat_height,
+            &mut vertices,
+            &mut indices,
+            &perlin,
+            0.1, // tree density (adjust as needed)
+            13,    // tree height
+            4,
+            0
+        );
+
+           generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices,  perlin, 0.01, 60.0, extended_size, 0, 3, 10);
+       
         }
         Biome::Mountains => {
-              // Generate the mountainous terrain
-            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, scale, 1.0, extended_size, 0, 0, 2);
-            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 20,  perlin, 0.03, 60.0, extended_size, 0, 3, 10);
+            generate_flat_terrain(flat_height + 1, &mut vertices, &mut indices, 0);
+            generate_terrain_chunk(
+                chunk_position, // Chunk position in the world
+                &mut vertices,  // Vertex buffer to store the chunk vertices
+                &mut indices,   // Index buffer to store the chunk indices
+                &perlin,        // Perlin noise instance
+                0.01,            // Lower noise scale for more detailed hills
+                10.0,           // Higher height scale for more dramatic height differences
+                1,              // Higher base height to lift the terrain off the ground more
+                0,              // Texture ID for terrain blocks
+            );
+            generate_trees(
+                chunk_position,
+                flat_height,
+                &mut vertices,
+                &mut indices,
+                &perlin,
+                0.1, // tree density (adjust as needed)
+                13,    // tree height
+                4,
+                0
+            );
+            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices,  perlin, 0.03, 60.0, extended_size, 0, 3, 10);
         }    
         Biome::Desert => {
               // Generate the mountainous terrain
             generate_flat_terrain(flat_height + 1, &mut vertices, &mut indices, 2);
-            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.03, 3.0, extended_size, 2, 1, 1);
-            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2,  perlin, 0.05, 10.0, extended_size, 2, 1, 2);
+            generate_terrain_chunk(
+                chunk_position, // Chunk position in the world
+                &mut vertices,  // Vertex buffer to store the chunk vertices
+                &mut indices,   // Index buffer to store the chunk indices
+                &perlin,        // Perlin noise instance
+                0.01,            // Lower noise scale for more detailed hills
+                10.0,           // Higher height scale for more dramatic height differences
+                1,              // Higher base height to lift the terrain off the ground more
+                2,              // Texture ID for terrain blocks
+            );
+            generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices,  perlin, 0.02, 20.0, extended_size, 2, 2, 2);
         }
     }
     

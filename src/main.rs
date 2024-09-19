@@ -25,19 +25,10 @@ fn main() {
         0.0,
     );
 
-    // load images
-    let texture = create_texture(&display, "res/blocks/dark-grass.png");
-
-    
     // init_uvs();
     // let uvs =  UVS.get().and_then(|map| map.get("dark_grass")).cloned().expect("No uvs found");
 
     let offset = Vector3::new(0.0, 0.0, 0.0);
-    
-    // Improve texture quality, idk if I see a change lol
-    let sampler = glium::uniforms::Sampler::new(&texture)
-        .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
-        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear);
 
     let program = glium::Program::from_source(&display, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC, None).unwrap();
 
@@ -59,7 +50,8 @@ fn main() {
         create_texture(&display, "res/blocks/dark-grass.png"),
         create_texture(&display, "res/blocks/light-grass.png"),
         create_texture(&display, "res/blocks/light-sand.png"),
-        create_texture(&display, "res/blocks/rock-1.png")
+        create_texture(&display, "res/blocks/rock-1.png"),
+        create_texture(&display, "res/blocks/brown.png")
     ];
 
     let _ = event_loop.run(move |event, window_target| {
