@@ -27,7 +27,7 @@ like forests, deserts, mountains and planes
 
 ## Features
 
-- 🌍 Infinite world functionality
+- 🌍 Infinite world generation
 - ⏩ Highly performant chunk generation
 - 🌳 Different biomes available
 - 📷 3d camera integrated

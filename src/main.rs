@@ -1,3 +1,5 @@
+# ![windows_subsystem = "windows"]
+
 use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
 use pixelquest::camera::camera::Camera;
@@ -47,13 +49,12 @@ fn main() {
     let mut world = World::new(&display);
 
     let textures: Vec<glium::Texture2d> = vec![
-        create_texture(&display, "res/blocks/dark-grass.png"),
-        create_texture(&display, "res/blocks/light-grass.png"),
-        create_texture(&display, "res/blocks/light-sand.png"),
-        create_texture(&display, "res/blocks/rock-1.png"),
-        create_texture(&display, "res/blocks/brown.png")
-    ];
-
+    create_texture(&display, include_bytes!("../res/blocks/dark-grass.png")),
+    create_texture(&display, include_bytes!("../res/blocks/light-grass.png")),
+    create_texture(&display, include_bytes!("../res/blocks/light-sand.png")),
+    create_texture(&display, include_bytes!("../res/blocks/rock-1.png")),
+    create_texture(&display, include_bytes!("../res/blocks/brown.png")),
+];
     let _ = event_loop.run(move |event, window_target| {
         let current_frame = std::time::Instant::now();
         let delta_time = (current_frame - last_frame).as_secs_f32();

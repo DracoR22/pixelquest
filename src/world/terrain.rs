@@ -4,45 +4,6 @@ use rand::Rng;
 
 use crate::{constants::world::{CHUNK_SIZE, CUBE_INDICES, OVERLAP}, graphics::cube::{create_single_tx_cube_vertices, Vertex}};
 
-pub struct Terrain {
-    pub chunk_position: Point3<i32>,
-    pub flat_height: i32,
-    pub vertices: Vec<Vertex>,
-    pub indices: Vec<u32>,
-
-}
-
-impl Terrain {
-    pub fn new(flat_height: i32, vertices: Vec<Vertex>, indices: Vec<u32>, chunk_position: Point3<i32>) -> Self {
-       Terrain {
-        flat_height,
-        indices, 
-        vertices,
-        chunk_position
-       }
-    }
-
-    pub fn generate_flat_terrain(&mut self, add_height: Option<i32>, texture_id: u32) {
-        let height = self.flat_height + add_height.unwrap_or(0);
-        for x in 0..CHUNK_SIZE {
-            for z in 0..CHUNK_SIZE {
-                for y in 0..= height {  // Ensure the flat terrain is generated up to the specified height
-                    let offset = Vector3::new(x as f32, y as f32, z as f32);
-                    let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
-    
-                    // generate vertices and indices for each vertex
-                    let base_index = self.vertices.len() as u32;
-                    self.vertices.extend_from_slice(&cube_vertices);
-    
-                    let cube_indices: Vec<u32> = CUBE_INDICES.iter()
-                        .map(|&idx| idx as u32 + base_index)
-                        .collect();
-                    self.indices.extend_from_slice(&cube_indices);
-                }
-            }}
-    }
-}
-
 pub fn generate_flat_terrain(flat_height: i32, vertices: &mut Vec<Vertex>, indices: &mut Vec<u32>, texture_id: u32) {
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {

@@ -62,8 +62,8 @@ pub fn get_uvs(name: &str) -> Option<FaceUVs> {
     UVS.get().and_then(|map| map.get(name)).cloned()
 }
 
-pub fn create_texture(display: &glium::Display<WindowSurface>, path: &str) -> glium::Texture2d {
-    let image = image::open(path).unwrap().to_rgba8();
+pub fn create_texture(display: &glium::Display<WindowSurface>, data: &[u8]) -> glium::Texture2d {
+    let image = image::load_from_memory(data).unwrap().to_rgba8();
     let dimensions = image.dimensions();
     let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), dimensions);
     glium::Texture2d::new(display, image).unwrap()

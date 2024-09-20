@@ -164,9 +164,11 @@ pub fn generate_biome_for_chunk(chunk_position: Point3<i32>) -> Biome {
 
     if noise_value < -0.3 {
         Biome::Desert
-    } else if noise_value < 0.3 {
+    }
+    // } else if noise_value < 0.3 {
+    //     Biome::Plains
+    // } 
+    else {
         Biome::Plains
-    } else {
-        Biome::Mountains
     }
 }
