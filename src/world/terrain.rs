@@ -2,23 +2,26 @@ use cgmath::{Point3, Vector3};
 use noise::{Perlin, NoiseFn};
 use rand::Rng;
 
-use crate::{constants::world::{CHUNK_SIZE, CUBE_INDICES, OVERLAP}, graphics::cube::{create_single_tx_cube_vertices, Vertex}};
+use crate::{constants::world::{CHUNK_SIZE, CUBE_INDICES, OVERLAP}, graphics::cube::{create_single_tx_cube_vertices, Vertex}, shapes::cube::create_cube};
 
 pub fn generate_flat_terrain(flat_height: i32, vertices: &mut Vec<Vertex>, indices: &mut Vec<u32>, texture_id: u32) {
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
             for y in 0..= flat_height {  // Ensure the flat terrain is generated up to the specified height
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
-                let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
+              
+                let (cube_vertices, cube_indices) = create_cube(offset, texture_id);
 
                 // generate vertices and indices for each vertex
                 let base_index = vertices.len() as u32;
                 vertices.extend_from_slice(&cube_vertices);
 
-                let cube_indices: Vec<u32> = CUBE_INDICES.iter()
-                    .map(|&idx| idx as u32 + base_index)
+
+                let adjusted_indices: Vec<u32> = cube_indices
+                    .iter()
+                    .map(|&idx| idx + base_index)
                     .collect();
-                indices.extend_from_slice(&cube_indices);
+                indices.extend_from_slice(&adjusted_indices);
             }
         }}
 }
@@ -61,22 +64,22 @@ pub fn generate_mountainous_terrain(
 
                     // Randomly determine which texture to use
                     let random_chance: f32 = rng.gen(); // Generate a random float between 0.0 and 1.0
-                    let texture_id = if random_chance < 0.2 {
-                        // 20% chance to apply the lower texture
+                    let texture_id = if random_chance < 0.08 {
+                        // 8% chance to apply the secondary texture
                         lower_texture_id
                     } else {
                         upper_texture_id
                     };
 
-                    let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
+                   let (cube_vertices, cube_indices) = create_cube(offset, texture_id);
 
                     let base_index = vertices.len() as u32;
                     vertices.extend_from_slice(&cube_vertices);
 
-                    let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                    let adjusted_indices: Vec<u32> = cube_indices.iter()
                         .map(|&idx| idx as u32 + base_index)
                         .collect();
-                    indices.extend_from_slice(&cube_indices);
+                    indices.extend_from_slice(&adjusted_indices);
                 }
             }
         }
@@ -144,13 +147,12 @@ pub fn generate_spiral_mountain_terrain(
                                 texture_id_2  // Use second texture for negative angles
                             };
 
-                            // Generate cube vertices with the selected texture
-                            let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
+                            let (cube_vertices, cube_indices) = create_cube(offset, texture_id);
 
                             let base_index = vertices.len() as u32;
                             vertices.extend_from_slice(&cube_vertices);
 
-                            let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                            let cube_indices: Vec<u32> = cube_indices.iter()
                                 .map(|&idx| idx as u32 + base_index)
                                 .collect();
                             indices.extend_from_slice(&cube_indices);
@@ -217,10 +219,12 @@ fn generate_tree(
     // Generate trunk
     for i in 0..height {
         let offset = Vector3::new(x, y + i as f32, z);
-        let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, trunk_texture_id);
+
+        let (cube_vertices, cube_indices) = create_cube(offset, trunk_texture_id);
+
         let base_index = vertices.len() as u32;
         vertices.extend_from_slice(&cube_vertices);
-        let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+        let cube_indices: Vec<u32> = cube_indices.iter()
             .map(|&idx| idx as u32 + base_index)
             .collect();
         indices.extend_from_slice(&cube_indices);
@@ -242,10 +246,10 @@ fn generate_tree(
 
                 // Only place leaf cubes if they are within the radius of the sphere
                 if distance <= leaf_radius {
-                    let leaf_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), leaf_pos, leaf_texture_id);
+                    let (leaf_vertices, leaf_indices) = create_cube(leaf_pos, leaf_texture_id);
                     let base_index = vertices.len() as u32;
                     vertices.extend_from_slice(&leaf_vertices);
-                    let leaf_indices: Vec<u32> = CUBE_INDICES.iter()
+                    let leaf_indices: Vec<u32> = leaf_indices.iter()
                         .map(|&idx| idx as u32 + base_index)
                         .collect();
                     indices.extend_from_slice(&leaf_indices);
@@ -302,10 +306,10 @@ pub fn generate_terrain_chunk(
             // Generate blocks for terrain
             for y in 0..terrain_height {
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
-                let cube_vertices = create_single_tx_cube_vertices(Point3::new(0.0, 0.0, 0.0), offset, texture_id);
+                let (cube_vertices, cube_indices) = create_cube(offset, texture_id);
                 let base_index = vertices.len() as u32;
                 vertices.extend_from_slice(&cube_vertices);
-                let cube_indices: Vec<u32> = CUBE_INDICES.iter()
+                let cube_indices: Vec<u32> = cube_indices.iter()
                     .map(|&idx| idx as u32 + base_index)
                     .collect();
                 indices.extend_from_slice(&cube_indices);

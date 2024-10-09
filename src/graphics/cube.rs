@@ -109,7 +109,6 @@ pub fn create_single_tx_cube_vertices(camera_position: Point3<f32>, offset: Vect
     ];
 
     let tex_coords = [
-        // Use a fixed set of UV coordinates for all faces
         [0.0, 1.0], // Top-left
         [1.0, 1.0], // Top-right
         [0.0, 0.0], // Bottom-left

@@ -69,7 +69,7 @@ fn main() {
                 glium::winit::event::WindowEvent::RedrawRequested => {
                     // Start drawing the frame
                     let mut target = display.draw();
-                    target.clear_color_and_depth((0.2510, 0.4745, 0.9608, 1.0), 1.0);
+                    target.clear_color_and_depth((0.0941, 0.2706, 0.9608, 1.0), 1.0);
 
                     // target.clear_color_and_depth((0.0, 0.3176, 1.0, 1.0), 1.0);
 
@@ -78,10 +78,10 @@ fn main() {
                     let aspect_ratio = width as f32 / height as f32;
                 
                     // Create a perspective projection matrix
-                    let perspective: Matrix4<f32> = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
+                    let perspective: Matrix4<f32> = perspective(Deg(45.0), aspect_ratio, 0.1, 900.0);
                 
                     // Update world based on the camera's current position (for infinite terrain generation)
-                    world.update(camera.position, &display); // <- Add this to update the world
+                    world.update(camera.position, &display); 
                 
                     // Render the world with the updated camera and perspective
                     world.render(&mut target, &program, &camera, perspective, &textures);
@@ -151,7 +151,7 @@ fn main() {
             glium::winit::event::Event::AboutToWait => {
                 // Handle keyboard input
                 let keys: Vec<Keycode> = device_state.get_keys();
-                let camera_speed = 10.0 * delta_time;
+                let camera_speed = 60.0 * delta_time;
 
                 if keys.contains(&Keycode::W) {
                     camera.position += camera.front * camera_speed;
