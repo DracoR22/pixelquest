@@ -6,7 +6,7 @@
 <br />
 <div align="center">
   <a href="">
-    <img src="showcase/logo.webp" alt="Logo" width="200">
+    <img src="showcase/logo.webp" alt="Logo" width="100">
   </a>
 
   <h3 align="center">🌍 Pixel Quest</h3>
