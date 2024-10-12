@@ -5,11 +5,9 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="">
-    <img src="showcase/logo.webp" alt="Logo" width="100">
-  </a>
+ 
 
-  <h3 align="center">🌍 Pixel Quest</h3>
+  <h1 align="center">🌍 Pixel Quest</h3>
 
   <p align="center">
     A Rust based voxel-based world inspired in Cube World and Veloren engine

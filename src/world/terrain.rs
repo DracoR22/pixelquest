@@ -1,6 +1,8 @@
 use cgmath::{Point3, Vector3};
 use noise::{Perlin, NoiseFn};
 use rand::Rng;
+use std::f64::consts::PI;
+
 
 use crate::{constants::world::{CHUNK_SIZE, CUBE_INDICES, OVERLAP}, graphics::cube::{create_single_tx_cube_vertices, Vertex}, shapes::cube::create_cube};
 
@@ -313,6 +315,73 @@ pub fn generate_terrain_chunk(
                     .map(|&idx| idx as u32 + base_index)
                     .collect();
                 indices.extend_from_slice(&cube_indices);
+            }
+        }
+    }
+}
+
+pub fn generate_arch_mountain_terrain(
+    chunk_position: Point3<i32>,
+    flat_height: i32,
+    vertices: &mut Vec<Vertex>,
+    indices: &mut Vec<u32>,
+    mountain_width: i32,
+    scale: f64,  
+    height_scale: f64,
+    extended_size: i32,
+    texture_id_1: u32,  // First texture ID
+    texture_id_2: u32,  // Second texture ID
+    arch_factor: f64,    // Control the arch height and width
+    num_arches: i32      // Control the number of arches
+) {
+    let mut height_map = vec![vec![0; extended_size as usize]; extended_size as usize];
+
+    // First loop: generate height map with arches
+    for x in 0..extended_size {
+        for z in 0..extended_size {
+            let world_x = (chunk_position.x * CHUNK_SIZE + x - OVERLAP) as f64;
+            let world_z = (chunk_position.z * CHUNK_SIZE + z - OVERLAP) as f64;
+
+            // Control the height using a cosine function to create arch-like peaks
+            let arch_position = ((x as f64 / extended_size as f64) * num_arches as f64).floor();
+            let height = (arch_position * arch_factor * (PI * 2.0) + world_x.cos() * height_scale).round() as i32 + flat_height;
+
+            height_map[x as usize][z as usize] = height;
+        }
+    }
+
+    // Second loop: generate cubes using the height map
+    for x in 0..CHUNK_SIZE {
+        for z in 0..CHUNK_SIZE {
+            let base_height = height_map[(x + OVERLAP) as usize][(z + OVERLAP) as usize];
+
+            for dy in 0..mountain_width {
+                let height = base_height + dy;
+
+                if height > flat_height {
+                    for y in (flat_height + 1)..=height {
+                        if is_block_exposed(x, y, z, &height_map) {
+                            let offset = Vector3::new(x as f32, y as f32, z as f32);
+
+                            // Alternate textures based on the arch position
+                            let texture_id = if (y - base_height) % 2 == 0 {
+                                texture_id_1  // Use first texture for one side of the arch
+                            } else {
+                                texture_id_2  // Use second texture for the other side
+                            };
+
+                            let (cube_vertices, cube_indices) = create_cube(offset, texture_id);
+
+                            let base_index = vertices.len() as u32;
+                            vertices.extend_from_slice(&cube_vertices);
+
+                            let cube_indices: Vec<u32> = cube_indices.iter()
+                                .map(|&idx| idx as u32 + base_index)
+                                .collect();
+                            indices.extend_from_slice(&cube_indices);
+                        }
+                    }
+                }
             }
         }
     }

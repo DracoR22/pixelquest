@@ -6,7 +6,7 @@ use noise::{NoiseFn, Perlin};
 
 use crate::graphics::cube::{create_single_tx_cube_vertices, FaceUVs, Vertex};
 
-use super::terrain::{generate_flat_terrain, generate_mountainous_terrain, generate_spiral_mountain_terrain, generate_terrain_chunk, generate_trees};
+use super::terrain::{generate_arch_mountain_terrain, generate_flat_terrain, generate_mountainous_terrain, generate_spiral_mountain_terrain, generate_terrain_chunk, generate_trees};
 
 const CHUNK_SIZE: i32 = 16;
 const OVERLAP: i32 = 1; // Amount of overlap with neighboring chunks
@@ -60,7 +60,9 @@ pub fn generate_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkDat
     1,              
     0,              
 );
-//         // generate_spiral_mountain_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2, 0.01, 3.0, extended_size, 0, 3,  5.0, 1.0);
+
+// generate_arch_mountain_terrain(chunk_position, flat_height, &mut vertices, &mut indices,  2, 0.01, 0.0, extended_size, 0, 4, 10.0, 1);
+// generate_spiral_mountain_terrain(chunk_position, flat_height, &mut vertices, &mut indices, 2, 0.01, 3.0, extended_size, 0, 3,  5.0, 1.0);
         generate_trees(
             chunk_position,
             flat_height,
@@ -73,7 +75,7 @@ pub fn generate_chunk(chunk_position: Point3<i32>, flat_height: i32) -> ChunkDat
             0
         );
 
-           generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices,  perlin, 0.01, 60.0, extended_size, 0, 4, 10);
+        generate_mountainous_terrain(chunk_position, flat_height, &mut vertices, &mut indices,  perlin, 0.01, 60.0, extended_size, 0, 4, 10);
        
         }
         // Biome::Mountains => {
