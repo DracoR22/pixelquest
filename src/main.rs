@@ -8,7 +8,7 @@ use pixelquest::camera::camera::Camera;
 use pixelquest::constants::world::{CHUNK_SIZE, CUBE_INDICES};
 use pixelquest::graphics::cube::create_single_tx_cube_vertices;
 use pixelquest::graphics::texture::{calculate_tile_uvs, create_texture, init_uvs, UVS};
-use pixelquest::shaders::shaders::{FRAGMENT_SHADER_SRC, VERTEX_SHADER_SRC};
+use pixelquest::renderer::renderer::Renderer;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use cgmath::{perspective, Deg, EuclideanSpace, InnerSpace, Matrix4, Point3, SquareMatrix, Vector3};
 use pixelquest::world::chunk::{generate_chunk, Chunk, ChunkData};
@@ -29,15 +29,8 @@ fn main() {
         0.0,
     );
 
-    // init_uvs();
-    // let uvs =  UVS.get().and_then(|map| map.get("dark_grass")).cloned().expect("No uvs found");
-
-    let vertex_shader_src = read_to_string("res/shaders/cube_vertex.glsl")
-    let fragment_shader_src = read_to_string("res/cube_fragment.glsl")
 
     let offset = Vector3::new(0.0, 0.0, 0.0);
-
-    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
     let device_state = DeviceState::new();
     let mut last_frame = std::time::Instant::now();
@@ -52,14 +45,8 @@ fn main() {
     window.set_cursor_visible(false);
 
     let mut world = World::new(&display);
+    let mut renderer = Renderer::new(&display);
 
-    let textures: Vec<glium::Texture2d> = vec![
-    create_texture(&display, include_bytes!("../res/blocks/dark-grass.png")),
-    create_texture(&display, include_bytes!("../res/blocks/light-grass.png")),
-    create_texture(&display, include_bytes!("../res/blocks/light-sand.png")),
-    create_texture(&display, include_bytes!("../res/blocks/rock-1.png")),
-    create_texture(&display, include_bytes!("../res/blocks/brown.png")),
-];
     let _ = event_loop.run(move |event, window_target| {
         let current_frame = std::time::Instant::now();
         let delta_time = (current_frame - last_frame).as_secs_f32();
@@ -76,8 +63,6 @@ fn main() {
                     let mut target = display.draw();
                     target.clear_color_and_depth((0.0941, 0.2706, 0.9608, 1.0), 1.0);
 
-                    // target.clear_color_and_depth((0.0, 0.3176, 1.0, 1.0), 1.0);
-
                     // Get window dimensions and aspect ratio
                     let (width, height) = target.get_dimensions();
                     let aspect_ratio = width as f32 / height as f32;
@@ -89,22 +74,19 @@ fn main() {
                     world.update(camera.position, &display); 
                 
                     // Render the world with the updated camera and perspective
-                    world.render(&mut target, &program, &camera, perspective, &textures);
+                    renderer.render(&mut target, &world, &camera, perspective);
                 
                     // Finalize drawing and display the frame
                     target.finish().unwrap();
                 },
                 glium::winit::event::WindowEvent::MouseInput { state, button, .. } => {
-                    if button == MouseButton::Left && state == ElementState::Pressed {
+                    if button == MouseButton::Left  {
                      // Use the camera's current position to spawn the cube
                      let cube_position: Point3<f32> = camera.position;
                      let cube_position_vec: Vector3<f32> = Vector3::new(camera.position.x, camera.position.y, 0.0);
 
                     // Access the chunks from World struct
                      for chunk in world.chunks.iter_mut() {
-                    // Check if the cube's position belongs to this chunk
-                    // if is_position_in_chunk(cube_position_vec, chunk) {
-                    // Generate new cube vertices
                    
                     let new_cube_vertices = create_single_tx_cube_vertices(cube_position, offset, 1);
         

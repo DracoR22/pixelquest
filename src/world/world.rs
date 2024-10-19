@@ -12,11 +12,11 @@ use super::chunk::Chunk;
 
 pub struct World {
     pub chunks: Vec<Chunk>,
-    chunk_positions: HashSet<Point3<i32>>,
-    chunk_size: i32,
-    last_camera_chunk_position: Point3<i32>, // Track the last chunk position
-    chunk_radius: i32,  
-    chunk_generation_queue: Vec<Point3<i32>>,
+    pub chunk_positions: HashSet<Point3<i32>>,
+    pub chunk_size: i32,
+    pub last_camera_chunk_position: Point3<i32>, // Track the last chunk position
+    pub chunk_radius: i32,  
+    pub chunk_generation_queue: Vec<Point3<i32>>,
 }
 
 impl World {
@@ -144,52 +144,5 @@ impl World {
             // Retain chunks that are within the unload distance
             is_within_unload_distance
         });
-    }
-    
-
-    pub fn render(&self, target: &mut glium::Frame, program: &glium::Program, camera: &Camera, perspective: Matrix4<f32>, textures: &Vec<glium::Texture2d>) {
-        let view = camera.get_view_matrix();
-        let light = [-1.0, 0.4, 0.9f32];
-
-        let params = glium::DrawParameters {
-            depth: glium::Depth {
-                test: glium::DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-
-        for chunk in &self.chunks {
-            let position_vector = Vector3::new(
-                chunk.position.x as f32 * self.chunk_size as f32,
-                chunk.position.y as f32 * self.chunk_size as f32,
-                chunk.position.z as f32 * self.chunk_size as f32
-            );
-            let model = Matrix4::from_translation(position_vector);
-
-            target
-                .draw(
-                    &chunk.vertex_buffer,
-                    &chunk.index_buffer,
-                    program,
-                    &uniform! {
-                        model: Into::<[[f32; 4]; 4]>::into(model),
-                        view: Into::<[[f32; 4]; 4]>::into(view),
-                        perspective: Into::<[[f32; 4]; 4]>::into(perspective),
-                        u_light: light,
-                        tex0: textures[0].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                        tex1: textures[1].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                        tex2: textures[2].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                        tex3: textures[3].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                        tex4: textures[4].sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                        // fog_color: [0.7, 0.85, 1.0f32],  // Slightly bluer, closer to sky color
-                        // fog_start: 50.0f32,  // Increased from 5.0
-                        // fog_end: 150.0f32,   // Increased from 60.0
-                    },
-                    &params,
-                )
-                .unwrap();
-        }
     }
 }
