@@ -1,5 +1,7 @@
 # ![windows_subsystem = "windows"]
 
+use std::fs::read_to_string;
+
 use glium::winit::event::{ElementState, MouseButton};
 use glium::Surface;
 use pixelquest::camera::camera::Camera;
@@ -30,9 +32,12 @@ fn main() {
     // init_uvs();
     // let uvs =  UVS.get().and_then(|map| map.get("dark_grass")).cloned().expect("No uvs found");
 
+    let vertex_shader_src = read_to_string("res/shaders/cube_vertex.glsl")
+    let fragment_shader_src = read_to_string("res/cube_fragment.glsl")
+
     let offset = Vector3::new(0.0, 0.0, 0.0);
 
-    let program = glium::Program::from_source(&display, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC, None).unwrap();
+    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
     let device_state = DeviceState::new();
     let mut last_frame = std::time::Instant::now();
